@@ -550,6 +550,77 @@ main {
     text-align: center;
     padding: 40px 20px;
     font-style: italic;
+    display: none;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.empty-state-icon {
+    width: 60px;
+    height: 80px;
+    background: var(--card-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 8px;
+    position: relative;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+.empty-state-icon::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    width: 100%;
+    height: 100%;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 8px;
+    z-index: -1;
+    transform: rotate(-5deg);
+}
+
+.empty-state-icon::after {
+    content: '+';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    color: var(--primary-color);
+    font-weight: bold;
+    opacity: 0.5;
+}
+
+.empty-state:hover .empty-state-icon {
+    transform: translateY(-5px) scale(1.05);
+}
+
+.empty-state:hover .empty-state-icon::before {
+    transform: rotate(-8deg) translateX(-2px);
+}
+
+.empty-state-title {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.empty-state-text {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    max-width: 300px;
+    line-height: 1.5;
 }
 
 .progress-container {

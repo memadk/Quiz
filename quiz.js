@@ -510,7 +510,13 @@ class QuizApp {
         const quizzes = this.quizManager.getAllQuizzes();
         
         if (quizzes.length === 0) {
-            container.innerHTML = `<p class="no-items">${i18n.t('noQuizzes')}</p>`;
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon"></div>
+                    <div class="empty-state-title">${i18n.t('noQuizzes')}</div>
+                    <div class="empty-state-text">${i18n.t('footer')}</div>
+                </div>
+            `;
             return;
         }
 
