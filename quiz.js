@@ -244,7 +244,23 @@ class QuizManager {
     }
 
     deleteQuiz(id) {
-        this.quizzes = this.quizzes.filter(q => q.id !== id);
+        const index = this.quizzes.findIndex(q => q.id === id);
+        if (index !== -1) {
+            const quiz = this.quizzes[index];
+            this.quizzes.splice(index, 1);
+            this.saveQuizzes();
+            return { quiz, index };
+        }
+        return null;
+    }
+
+    restoreQuiz(quiz, index) {
+        if (typeof index === 'number' && index >= 0) {
+            const safeIndex = Math.min(index, this.quizzes.length);
+            this.quizzes.splice(safeIndex, 0, quiz);
+        } else {
+            this.quizzes.push(quiz);
+        }
         this.saveQuizzes();
     }
 
@@ -294,7 +310,26 @@ class QuizManager {
     deleteQuestion(quizId, questionId) {
         const quiz = this.getQuiz(quizId);
         if (quiz) {
-            quiz.questions = quiz.questions.filter(q => q.id !== questionId);
+            const index = quiz.questions.findIndex(q => q.id === questionId);
+            if (index !== -1) {
+                const question = quiz.questions[index];
+                quiz.questions.splice(index, 1);
+                this.saveQuizzes();
+                return { question, index };
+            }
+        }
+        return null;
+    }
+
+    restoreQuestion(quizId, question, index) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            if (typeof index === 'number' && index >= 0) {
+                const safeIndex = Math.min(index, quiz.questions.length);
+                quiz.questions.splice(safeIndex, 0, question);
+            } else {
+                quiz.questions.push(question);
+            }
             this.saveQuizzes();
         }
     }
@@ -414,6 +449,7 @@ class QuizApp {
         this.editingQuestionId = null;
         this.editingQuizId = null;
         this.activeDropdown = null;
+        this.toasts = [];
         this.init();
     }
 
@@ -497,6 +533,60 @@ class QuizApp {
             el.placeholder = i18n.t(el.dataset.i18nPlaceholder);
         });
         this.renderQuizList();
+        this.initToastContainer();
+    }
+
+    initToastContainer() {
+        if (!document.querySelector('.toast-container')) {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+    }
+
+    showToast(message, undoCallback = null) {
+        const container = document.querySelector('.toast-container');
+        
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        
+        let html = `<span class="toast-message">${message}</span>`;
+        if (undoCallback) {
+            html += `<button class="toast-undo">${i18n.t('undo')}</button>`;
+        }
+        
+        toast.innerHTML = html;
+        container.appendChild(toast);
+
+        let isUndone = false;
+        let timeoutId;
+
+        if (undoCallback) {
+            const undoBtn = toast.querySelector('.toast-undo');
+            undoBtn.addEventListener('click', () => {
+                isUndone = true;
+                undoCallback();
+                clearTimeout(timeoutId);
+                this.dismissToast(toast);
+            });
+        }
+
+        timeoutId = setTimeout(() => {
+            if (!isUndone) {
+                this.dismissToast(toast);
+            }
+        }, 5000);
+    }
+
+    dismissToast(toast) {
+        toast.classList.add('exiting');
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+        });
     }
 
     showQuizListScreen() {
@@ -629,9 +719,19 @@ class QuizApp {
 
     deleteQuiz(quizId) {
         const quiz = this.quizManager.getQuiz(quizId);
-        if (quiz && confirm(i18n.t('confirmDeleteQuiz', { name: quiz.name }))) {
-            this.quizManager.deleteQuiz(quizId);
-            this.renderQuizList();
+        if (quiz) {
+            const result = this.quizManager.deleteQuiz(quizId);
+            if (result) {
+                this.renderQuizList();
+                this.showToast(
+                    i18n.t('deleted', { name: quiz.name }),
+                    () => {
+                        this.quizManager.restoreQuiz(result.quiz, result.index);
+                        this.renderQuizList();
+                        this.showToast(i18n.t('restored', { name: quiz.name }));
+                    }
+                );
+            }
         }
     }
 
@@ -1135,9 +1235,22 @@ class QuizApp {
     }
 
     deleteQuestion(questionId) {
-        if (confirm(i18n.t('confirmDeleteQuestion'))) {
-            this.quizManager.deleteQuestion(this.currentQuizId, questionId);
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        if (!quiz) return;
+        
+        const result = this.quizManager.deleteQuestion(this.currentQuizId, questionId);
+        
+        if (result) {
             this.renderQuestionList();
+
+            this.showToast(
+                i18n.t('deleted', { name: i18n.t('questionEntity') }),
+                () => {
+                    this.quizManager.restoreQuestion(this.currentQuizId, result.question, result.index);
+                    this.renderQuestionList();
+                    this.showToast(i18n.t('restored', { name: i18n.t('questionEntity') }));
+                }
+            );
         }
     }
 
