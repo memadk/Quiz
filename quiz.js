@@ -1,131 +1,3 @@
-const DEFAULT_QUESTIONS = [
-    {
-        question: "Hvor meget energi indeholder kulhydrater pr. gram?",
-        options: ["9 kJ/g", "17 kJ/g", "29 kJ/g", "38 kJ/g"],
-        correct: 1
-    },
-    {
-        question: "Hvor meget energi indeholder fedt pr. gram?",
-        options: ["17 kJ/g", "29 kJ/g", "38 kJ/g", "45 kJ/g"],
-        correct: 2
-    },
-    {
-        question: "Hvad er de tre makronæringsstoffer?",
-        options: ["Vitaminer, mineraler og vand", "Kulhydrater, proteiner og fedt", "Glukose, fruktose og laktose", "Calcium, jern og natrium"],
-        correct: 1
-    },
-    {
-        question: "Hvad er et monosakkarid?",
-        options: ["Et fedtstof med én fedtsyre", "Et protein med én aminosyre", "Et kulhydrat bestående af én sukkerring", "Et vitamin der opløses i vand"],
-        correct: 2
-    },
-    {
-        question: "Hvad er glukose også kendt som?",
-        options: ["Mælkesukker", "Frugtsukker", "Druesukker", "Rørsukker"],
-        correct: 2
-    },
-    {
-        question: "Hvad består sakkarose (køkkensukker) af?",
-        options: ["To glukosemolekyler", "Glukose og galaktose", "Glukose og fruktose", "Fruktose og galaktose"],
-        correct: 2
-    },
-    {
-        question: "Hvor lagres glykogen i menneskets krop?",
-        options: ["I fedtvævet", "I lever og muskler", "I knoglerne", "I hjernen"],
-        correct: 1
-    },
-    {
-        question: "Hvorfor kan mennesker ikke fordøje cellulose?",
-        options: ["Fordi det er giftigt", "Fordi vi mangler de specifikke enzymer", "Fordi det opløses i vand", "Fordi det nedbrydes for hurtigt"],
-        correct: 1
-    },
-    {
-        question: "Hvor mange aminosyrer findes der i alt?",
-        options: ["8", "11", "15", "20"],
-        correct: 3
-    },
-    {
-        question: "Hvad er essentielle aminosyrer?",
-        options: ["Aminosyrer kroppen selv kan producere", "Aminosyrer der skal tilføres via kosten", "Aminosyrer der kun findes i kød", "Aminosyrer der bruges til energi"],
-        correct: 1
-    },
-    {
-        question: "Hvad binder aminosyrer sammen i proteiner?",
-        options: ["Hydrogenbindinger", "Esterbindinger", "Peptidbindinger", "Ionbindinger"],
-        correct: 2
-    },
-    {
-        question: "Hvilket protein transporterer ilt i blodet?",
-        options: ["Insulin", "Kollagen", "Hæmoglobin", "Keratin"],
-        correct: 2
-    },
-    {
-        question: "Hvad består et triglycerid af?",
-        options: ["Tre aminosyrer og ét glycerol", "Ét glycerolmolekyle og tre fedtsyrer", "Tre glukosemolekyler", "Ét fedtsyre og tre glycerol"],
-        correct: 1
-    },
-    {
-        question: "Hvad kendetegner mættede fedtsyrer?",
-        options: ["De har mange dobbeltbindinger", "De er flydende ved stuetemperatur", "De har ingen dobbeltbindinger", "De findes kun i planteolie"],
-        correct: 2
-    },
-    {
-        question: "Hvad transporterer LDL-kolesterol?",
-        options: ["Fedt væk fra blodårerne til leveren", "Fedt til arterierne (kan give aflejringer)", "Ilt til musklerne", "Glukose til hjernen"],
-        correct: 1
-    },
-    {
-        question: "Hvilke vitaminer er fedtopløselige?",
-        options: ["B og C", "A, D, E og K", "Kun D-vitamin", "A, B, C og D"],
-        correct: 1
-    },
-    {
-        question: "Hvilket mineral er vigtigt for ilttransport i blodet?",
-        options: ["Calcium", "Natrium", "Jern", "Kalium"],
-        correct: 2
-    },
-    {
-        question: "Hvor stor en andel af kroppens vægt udgør vand?",
-        options: ["20-30%", "30-40%", "45-65%", "70-80%"],
-        correct: 2
-    },
-    {
-        question: "Hvor meget væske anbefales det at drikke dagligt?",
-        options: ["0,5 liter", "1,5 liter", "3 liter", "4 liter"],
-        correct: 1
-    },
-    {
-        question: "Hvad er funktionen af kostfibre?",
-        options: ["At give kroppen energi hurtigt", "At øge blodsukkeret", "At give mæthed og være føde for tarmbakterier", "At transportere ilt"],
-        correct: 2
-    },
-    {
-        question: "Hvilket enzym starter nedbrydningen af stivelse i munden?",
-        options: ["Lipase", "Pepsin", "Amylase", "Trypsin"],
-        correct: 2
-    },
-    {
-        question: "Hvad anbefaler '6 om dagen'?",
-        options: ["6 liter vand dagligt", "6 måltider dagligt", "600 g frugt og grønt dagligt", "6 timer mellem måltider"],
-        correct: 2
-    },
-    {
-        question: "Hvad er antioxidanters funktion?",
-        options: ["At øge energiniveauet", "At beskytte mod frie radikaler", "At nedbryde fedt", "At opbygge muskler"],
-        correct: 1
-    },
-    {
-        question: "Hvor dannes D-vitamin primært?",
-        options: ["I leveren", "I tarmene", "I huden ved sollys", "I knoglerne"],
-        correct: 2
-    },
-    {
-        question: "Hvilket hormon sænker blodsukkeret?",
-        options: ["Glukagon", "Adrenalin", "Kortisol", "Insulin"],
-        correct: 3
-    }
-];
-
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 class PDFReader {
@@ -152,7 +24,7 @@ class OpenAIService {
     }
 
     async generateQuestions(text, numQuestions = 10) {
-        const prompt = `Du er en ekspert i at lave quizspørgsmål på dansk. Baseret på følgende tekst fra en biologibog, generer ${numQuestions} multiple choice spørgsmål.
+        const prompt = `Du er en ekspert i at lave quizspørgsmål på dansk. Baseret på følgende tekst, generer ${numQuestions} multiple choice spørgsmål.
 
 TEKST:
 ${text.substring(0, 8000)}
@@ -206,26 +78,83 @@ Hvor "correct" er index (0-3) for det korrekte svar.`;
     }
 }
 
-class QuizApp {
+class QuestionManager {
     constructor() {
-        this.questions = [...DEFAULT_QUESTIONS];
-        this.generatedQuestions = this.loadGeneratedQuestions();
-        this.selectedFiles = [];
-        this.quiz = null;
-        this.init();
+        this.questions = this.loadQuestions();
     }
 
-    loadGeneratedQuestions() {
-        const stored = localStorage.getItem('generatedQuestions');
+    loadQuestions() {
+        const stored = localStorage.getItem('quizQuestions');
         return stored ? JSON.parse(stored) : [];
     }
 
-    saveGeneratedQuestions() {
-        localStorage.setItem('generatedQuestions', JSON.stringify(this.generatedQuestions));
+    saveQuestions() {
+        localStorage.setItem('quizQuestions', JSON.stringify(this.questions));
+    }
+
+    addQuestions(newQuestions) {
+        const questionsWithIds = newQuestions.map(q => ({
+            ...q,
+            id: this.generateId()
+        }));
+        this.questions = [...this.questions, ...questionsWithIds];
+        this.saveQuestions();
+        return questionsWithIds.length;
+    }
+
+    addQuestion(question) {
+        const questionWithId = {
+            ...question,
+            id: this.generateId()
+        };
+        this.questions.push(questionWithId);
+        this.saveQuestions();
+        return questionWithId;
+    }
+
+    updateQuestion(id, updatedQuestion) {
+        const index = this.questions.findIndex(q => q.id === id);
+        if (index !== -1) {
+            this.questions[index] = { ...updatedQuestion, id };
+            this.saveQuestions();
+            return true;
+        }
+        return false;
+    }
+
+    deleteQuestion(id) {
+        this.questions = this.questions.filter(q => q.id !== id);
+        this.saveQuestions();
+    }
+
+    deleteAllQuestions() {
+        this.questions = [];
+        this.saveQuestions();
+    }
+
+    getQuestion(id) {
+        return this.questions.find(q => q.id === id);
     }
 
     getAllQuestions() {
-        return [...this.questions, ...this.generatedQuestions];
+        return this.questions;
+    }
+
+    getQuestionCount() {
+        return this.questions.length;
+    }
+
+    generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+}
+
+class QuizApp {
+    constructor() {
+        this.questionManager = new QuestionManager();
+        this.selectedFiles = [];
+        this.editingQuestionId = null;
+        this.init();
     }
 
     init() {
@@ -233,6 +162,8 @@ class QuizApp {
         this.startScreen = document.getElementById('start-screen');
         this.questionScreen = document.getElementById('question-screen');
         this.resultScreen = document.getElementById('result-screen');
+        this.manageScreen = document.getElementById('manage-screen');
+        this.editScreen = document.getElementById('edit-screen');
         
         this.apiKeyInput = document.getElementById('api-key');
         this.pdfInput = document.getElementById('pdf-input');
@@ -241,7 +172,6 @@ class QuizApp {
         this.skipBtn = document.getElementById('skip-btn');
         this.generationStatus = document.getElementById('generation-status');
         this.questionCount = document.getElementById('question-count');
-        this.backToSetupBtn = document.getElementById('back-to-setup-btn');
 
         const savedApiKey = localStorage.getItem('openai_api_key');
         if (savedApiKey) {
@@ -250,12 +180,25 @@ class QuizApp {
 
         this.pdfInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.generateBtn.addEventListener('click', () => this.generateQuestions());
-        this.skipBtn.addEventListener('click', () => this.skipToQuiz());
-        this.backToSetupBtn.addEventListener('click', () => this.showScreen(this.setupScreen));
-        
+        this.skipBtn.addEventListener('click', () => this.goToStartScreen());
         this.apiKeyInput.addEventListener('input', () => this.updateGenerateButton());
         
+        document.getElementById('start-btn').addEventListener('click', () => this.startQuiz());
+        document.getElementById('manage-btn').addEventListener('click', () => this.showManageScreen());
+        document.getElementById('back-to-setup-btn').addEventListener('click', () => this.showScreen(this.setupScreen));
+
+        document.getElementById('add-question-btn').addEventListener('click', () => this.showAddQuestionForm());
+        document.getElementById('delete-all-btn').addEventListener('click', () => this.deleteAllQuestions());
+        document.getElementById('back-from-manage-btn').addEventListener('click', () => this.goToStartScreen());
+
+        document.getElementById('save-question-btn').addEventListener('click', () => this.saveQuestion());
+        document.getElementById('cancel-edit-btn').addEventListener('click', () => this.showManageScreen());
+
+        document.getElementById('next-btn').addEventListener('click', () => this.nextQuestion());
+        document.getElementById('restart-btn').addEventListener('click', () => this.goToStartScreen());
+        
         this.updateGenerateButton();
+        this.updateSkipButton();
     }
 
     handleFileSelect(e) {
@@ -270,6 +213,11 @@ class QuizApp {
         const hasApiKey = this.apiKeyInput.value.trim().length > 0;
         const hasFiles = this.selectedFiles.length > 0;
         this.generateBtn.disabled = !(hasApiKey && hasFiles);
+    }
+
+    updateSkipButton() {
+        const hasQuestions = this.questionManager.getQuestionCount() > 0;
+        this.skipBtn.textContent = hasQuestions ? 'Fortsæt til quiz' : 'Start uden spørgsmål';
     }
 
     showStatus(message, type) {
@@ -316,40 +264,157 @@ class QuizApp {
             }
         }
         
-        this.generatedQuestions = [...this.generatedQuestions, ...allNewQuestions];
-        this.saveGeneratedQuestions();
+        const addedCount = this.questionManager.addQuestions(allNewQuestions);
         
         this.showStatus(
-            `✓ Færdig! ${allNewQuestions.length} nye spørgsmål tilføjet. Total: ${this.getAllQuestions().length} spørgsmål.`,
+            `✓ Færdig! ${addedCount} nye spørgsmål tilføjet. Total: ${this.questionManager.getQuestionCount()} spørgsmål.`,
             'success'
         );
         
+        this.updateSkipButton();
+        
         setTimeout(() => {
-            this.skipToQuiz();
+            this.goToStartScreen();
         }, 1500);
     }
 
-    skipToQuiz() {
+    goToStartScreen() {
         this.hideStatus();
-        const total = this.getAllQuestions().length;
-        this.questionCount.textContent = `${total} spørgsmål tilgængelige (20 tilfældige vælges)`;
-        this.showScreen(this.startScreen);
-        this.initQuiz();
-    }
-
-    initQuiz() {
+        const count = this.questionManager.getQuestionCount();
         const startBtn = document.getElementById('start-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const restartBtn = document.getElementById('restart-btn');
-
-        startBtn.onclick = () => this.startQuiz();
-        nextBtn.onclick = () => this.nextQuestion();
-        restartBtn.onclick = () => this.restartQuiz();
+        
+        if (count === 0) {
+            this.questionCount.textContent = 'Ingen spørgsmål endnu. Upload PDF-filer for at generere spørgsmål.';
+            startBtn.disabled = true;
+        } else {
+            const quizSize = Math.min(count, 20);
+            this.questionCount.textContent = `${count} spørgsmål tilgængelige (${quizSize} tilfældige vælges)`;
+            startBtn.disabled = false;
+        }
+        
+        this.showScreen(this.startScreen);
     }
 
     showScreen(screen) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         screen.classList.add('active');
+    }
+
+    showManageScreen() {
+        this.renderQuestionList();
+        this.showScreen(this.manageScreen);
+    }
+
+    renderQuestionList() {
+        const container = document.getElementById('questions-list');
+        const questions = this.questionManager.getAllQuestions();
+        
+        if (questions.length === 0) {
+            container.innerHTML = '<p class="no-questions">Ingen spørgsmål endnu. Tilføj spørgsmål manuelt eller generer fra PDF.</p>';
+            return;
+        }
+
+        container.innerHTML = questions.map((q, index) => `
+            <div class="question-item" data-id="${q.id}">
+                <div class="question-item-content">
+                    <span class="question-number">${index + 1}.</span>
+                    <span class="question-preview">${this.truncate(q.question, 60)}</span>
+                </div>
+                <div class="question-item-actions">
+                    <button class="btn-icon edit-btn" title="Rediger" data-id="${q.id}">✏️</button>
+                    <button class="btn-icon delete-btn" title="Slet" data-id="${q.id}">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showEditQuestionForm(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteQuestion(btn.dataset.id);
+            });
+        });
+    }
+
+    truncate(text, maxLength) {
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    showAddQuestionForm() {
+        this.editingQuestionId = null;
+        document.getElementById('edit-title').textContent = 'Tilføj nyt spørgsmål';
+        document.getElementById('edit-question').value = '';
+        document.getElementById('edit-option-0').value = '';
+        document.getElementById('edit-option-1').value = '';
+        document.getElementById('edit-option-2').value = '';
+        document.getElementById('edit-option-3').value = '';
+        document.getElementById('edit-correct').value = '0';
+        this.showScreen(this.editScreen);
+    }
+
+    showEditQuestionForm(id) {
+        const question = this.questionManager.getQuestion(id);
+        if (!question) return;
+
+        this.editingQuestionId = id;
+        document.getElementById('edit-title').textContent = 'Rediger spørgsmål';
+        document.getElementById('edit-question').value = question.question;
+        document.getElementById('edit-option-0').value = question.options[0];
+        document.getElementById('edit-option-1').value = question.options[1];
+        document.getElementById('edit-option-2').value = question.options[2];
+        document.getElementById('edit-option-3').value = question.options[3];
+        document.getElementById('edit-correct').value = question.correct.toString();
+        this.showScreen(this.editScreen);
+    }
+
+    saveQuestion() {
+        const question = {
+            question: document.getElementById('edit-question').value.trim(),
+            options: [
+                document.getElementById('edit-option-0').value.trim(),
+                document.getElementById('edit-option-1').value.trim(),
+                document.getElementById('edit-option-2').value.trim(),
+                document.getElementById('edit-option-3').value.trim()
+            ],
+            correct: parseInt(document.getElementById('edit-correct').value)
+        };
+
+        if (!question.question) {
+            alert('Indtast venligst et spørgsmål');
+            return;
+        }
+        if (question.options.some(opt => !opt)) {
+            alert('Alle svarmuligheder skal udfyldes');
+            return;
+        }
+
+        if (this.editingQuestionId) {
+            this.questionManager.updateQuestion(this.editingQuestionId, question);
+        } else {
+            this.questionManager.addQuestion(question);
+        }
+
+        this.showManageScreen();
+    }
+
+    deleteQuestion(id) {
+        if (confirm('Er du sikker på, at du vil slette dette spørgsmål?')) {
+            this.questionManager.deleteQuestion(id);
+            this.renderQuestionList();
+        }
+    }
+
+    deleteAllQuestions() {
+        if (confirm('Er du sikker på, at du vil slette ALLE spørgsmål? Dette kan ikke fortrydes.')) {
+            this.questionManager.deleteAllQuestions();
+            this.renderQuestionList();
+        }
     }
 
     shuffleArray(array) {
@@ -362,10 +427,19 @@ class QuizApp {
     }
 
     startQuiz() {
-        this.quizQuestions = this.shuffleArray(this.getAllQuestions()).slice(0, 20);
+        const allQuestions = this.questionManager.getAllQuestions();
+        if (allQuestions.length === 0) {
+            alert('Du skal have mindst ét spørgsmål for at starte quizzen.');
+            return;
+        }
+
+        this.quizQuestions = this.shuffleArray(allQuestions).slice(0, 20);
         this.currentIndex = 0;
         this.score = 0;
         this.answers = [];
+        
+        document.querySelector('.score-total').textContent = `/ ${this.quizQuestions.length}`;
+        
         this.showScreen(this.questionScreen);
         this.displayQuestion();
     }
@@ -452,7 +526,7 @@ class QuizApp {
         let message = '';
         
         if (percentage === 100) {
-            message = 'Perfekt! Du er en ekspert i kost og sundhed!';
+            message = 'Perfekt! Du har svaret rigtigt på alle spørgsmål!';
         } else if (percentage >= 80) {
             message = 'Fantastisk! Du har styr på det meste!';
         } else if (percentage >= 60) {
@@ -460,7 +534,7 @@ class QuizApp {
         } else if (percentage >= 40) {
             message = 'Ikke dårligt, men der er plads til forbedring.';
         } else {
-            message = 'Læs kapitlerne igen og prøv en gang til!';
+            message = 'Prøv at gennemgå materialet igen og tag quizzen en gang til!';
         }
         
         resultMessage.textContent = message;
@@ -472,10 +546,6 @@ class QuizApp {
                 ${!answer.isCorrect ? `<br>Korrekt svar: ${answer.correctAnswer}` : ''}
             </div>
         `).join('');
-    }
-
-    restartQuiz() {
-        this.showScreen(this.startScreen);
     }
 }
 

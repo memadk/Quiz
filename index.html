@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biologi Quiz - Kost og Sundhed</title>
+    <title>PDF Quiz Generator</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Biologi Quiz</h1>
-            <p class="subtitle">Kost og Sundhed - Biologi i udvikling</p>
+            <h1>PDF Quiz</h1>
+            <p class="subtitle">Generer quiz fra dine PDF-dokumenter</p>
         </header>
 
         <main id="quiz-container">
@@ -26,7 +26,7 @@
                     </div>
 
                     <div class="setup-section">
-                        <label>Vælg PDF-filer fra Text-mappen:</label>
+                        <label>Vælg PDF-filer:</label>
                         <input type="file" id="pdf-input" accept=".pdf" multiple class="file-input">
                         <div id="file-list" class="file-list"></div>
                     </div>
@@ -34,24 +34,63 @@
                     <div id="generation-status" class="generation-status"></div>
 
                     <button id="generate-btn" class="btn btn-primary" disabled>Generer spørgsmål fra PDF'er</button>
-                    <button id="skip-btn" class="btn btn-secondary">Brug eksisterende spørgsmål</button>
+                    <button id="skip-btn" class="btn btn-secondary">Start uden spørgsmål</button>
                 </div>
             </div>
 
             <div id="start-screen" class="screen">
                 <div class="start-content">
-                    <h2>Test din viden om kost og sundhed!</h2>
-                    <p>Denne quiz indeholder spørgsmål om:</p>
-                    <ul class="topic-list">
-                        <li>Kulhydrater</li>
-                        <li>Proteiner</li>
-                        <li>Fedtstoffer</li>
-                        <li>Mineraler og vitaminer</li>
-                        <li>Vand</li>
-                    </ul>
+                    <h2>Quiz klar!</h2>
                     <p id="question-count" class="question-count"></p>
                     <button id="start-btn" class="btn btn-primary">Start Quiz</button>
+                    <button id="manage-btn" class="btn btn-secondary">Administrer spørgsmål</button>
                     <button id="back-to-setup-btn" class="btn btn-secondary">Tilføj flere PDF'er</button>
+                </div>
+            </div>
+
+            <div id="manage-screen" class="screen">
+                <div class="manage-content">
+                    <h2>Administrer spørgsmål</h2>
+                    <div class="manage-actions">
+                        <button id="add-question-btn" class="btn btn-primary">+ Tilføj spørgsmål</button>
+                        <button id="delete-all-btn" class="btn btn-danger">Slet alle</button>
+                    </div>
+                    <div id="questions-list" class="questions-list"></div>
+                    <button id="back-from-manage-btn" class="btn btn-secondary">Tilbage</button>
+                </div>
+            </div>
+
+            <div id="edit-screen" class="screen">
+                <div class="edit-content">
+                    <h2 id="edit-title">Tilføj nyt spørgsmål</h2>
+                    
+                    <div class="form-group">
+                        <label for="edit-question">Spørgsmål:</label>
+                        <textarea id="edit-question" class="input-field" rows="3" placeholder="Skriv dit spørgsmål her..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Svarmuligheder:</label>
+                        <input type="text" id="edit-option-0" class="input-field" placeholder="Svar A">
+                        <input type="text" id="edit-option-1" class="input-field" placeholder="Svar B">
+                        <input type="text" id="edit-option-2" class="input-field" placeholder="Svar C">
+                        <input type="text" id="edit-option-3" class="input-field" placeholder="Svar D">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-correct">Korrekt svar:</label>
+                        <select id="edit-correct" class="input-field">
+                            <option value="0">Svar A</option>
+                            <option value="1">Svar B</option>
+                            <option value="2">Svar C</option>
+                            <option value="3">Svar D</option>
+                        </select>
+                    </div>
+
+                    <div class="edit-actions">
+                        <button id="save-question-btn" class="btn btn-primary">Gem</button>
+                        <button id="cancel-edit-btn" class="btn btn-secondary">Annuller</button>
+                    </div>
                 </div>
             </div>
 
@@ -90,7 +129,7 @@
         </main>
 
         <footer>
-            <p>Baseret på kapitler fra "Biologi i udvikling"</p>
+            <p>Upload PDF-filer for at generere quizspørgsmål</p>
         </footer>
     </div>
 
