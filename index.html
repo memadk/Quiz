@@ -11,13 +11,42 @@
     <div class="container">
         <header>
             <h1>PDF Quiz</h1>
-            <p class="subtitle">Generer quiz fra dine PDF-dokumenter</p>
+            <p class="subtitle">Opret og administrer dine quizzer</p>
         </header>
 
         <main id="quiz-container">
-            <div id="setup-screen" class="screen active">
+            <div id="quiz-list-screen" class="screen active">
+                <div class="list-content">
+                    <h2>Mine Quizzer</h2>
+                    <button id="create-quiz-btn" class="btn btn-primary">+ Opret ny quiz</button>
+                    <div id="quizzes-list" class="quizzes-list"></div>
+                </div>
+            </div>
+
+            <div id="edit-quiz-screen" class="screen">
+                <div class="edit-content">
+                    <h2 id="edit-quiz-title">Opret ny quiz</h2>
+                    
+                    <div class="form-group">
+                        <label for="quiz-name">Navn:</label>
+                        <input type="text" id="quiz-name" class="input-field" placeholder="F.eks. Biologi - Kapitel 3">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quiz-description">Beskrivelse (valgfrit):</label>
+                        <textarea id="quiz-description" class="input-field" rows="2" placeholder="Kort beskrivelse af quizzen..."></textarea>
+                    </div>
+
+                    <div class="edit-actions">
+                        <button id="save-quiz-btn" class="btn btn-primary">Gem</button>
+                        <button id="cancel-quiz-btn" class="btn btn-secondary">Annuller</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="setup-screen" class="screen">
                 <div class="setup-content">
-                    <h2>Opsætning</h2>
+                    <h2 id="current-quiz-name">Quiz</h2>
                     
                     <div class="setup-section">
                         <label for="api-key">OpenAI API-nøgle:</label>
@@ -34,23 +63,24 @@
                     <div id="generation-status" class="generation-status"></div>
 
                     <button id="generate-btn" class="btn btn-primary" disabled>Generer spørgsmål fra PDF'er</button>
-                    <button id="skip-btn" class="btn btn-secondary">Start uden spørgsmål</button>
+                    <button id="skip-btn" class="btn btn-secondary">Spring over</button>
                 </div>
             </div>
 
             <div id="start-screen" class="screen">
                 <div class="start-content">
-                    <h2>Quiz klar!</h2>
+                    <h2 id="start-quiz-name">Quiz klar!</h2>
                     <p id="question-count" class="question-count"></p>
                     <button id="start-btn" class="btn btn-primary">Start Quiz</button>
                     <button id="manage-btn" class="btn btn-secondary">Administrer spørgsmål</button>
                     <button id="back-to-setup-btn" class="btn btn-secondary">Tilføj flere PDF'er</button>
+                    <button id="back-to-list-btn" class="btn btn-secondary">Tilbage til mine quizzer</button>
                 </div>
             </div>
 
             <div id="manage-screen" class="screen">
                 <div class="manage-content">
-                    <h2>Administrer spørgsmål</h2>
+                    <h2 id="manage-quiz-name">Administrer spørgsmål</h2>
                     <div class="manage-actions">
                         <button id="add-question-btn" class="btn btn-primary">+ Tilføj spørgsmål</button>
                         <button id="delete-all-btn" class="btn btn-danger">Slet alle</button>
@@ -114,7 +144,7 @@
 
             <div id="result-screen" class="screen">
                 <div class="result-content">
-                    <h2>Quiz Afsluttet!</h2>
+                    <h2 id="result-quiz-name">Quiz Afsluttet!</h2>
                     <div id="score-display" class="score-display">
                         <div class="score-circle">
                             <span id="score-number">0</span>
@@ -124,12 +154,13 @@
                     <p id="result-message" class="result-message"></p>
                     <div id="result-summary" class="result-summary"></div>
                     <button id="restart-btn" class="btn btn-primary">Prøv igen</button>
+                    <button id="back-to-list-from-result-btn" class="btn btn-secondary">Tilbage til mine quizzer</button>
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>Upload PDF-filer for at generere quizspørgsmål</p>
+            <p>Opret quizzer fra dine PDF-dokumenter</p>
         </footer>
     </div>
 

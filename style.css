@@ -73,6 +73,16 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
+.list-content {
+    text-align: center;
+}
+
+.list-content h2 {
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
 .start-content {
     text-align: center;
 }
@@ -98,6 +108,11 @@ main {
     transition: all 0.3s ease;
     display: inline-block;
     margin: 5px;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.9rem;
 }
 
 .btn-primary {
@@ -148,6 +163,70 @@ main {
 
 .btn-icon:hover {
     background: var(--bg-color);
+}
+
+.quizzes-list {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.quiz-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--bg-color);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.quiz-card:hover {
+    border-color: var(--primary-color);
+    background: #e8f0fe;
+}
+
+.quiz-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.quiz-card-title {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+.quiz-card-description {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quiz-card-count {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.quiz-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.no-items {
+    color: var(--text-light);
+    text-align: center;
+    padding: 40px 20px;
+    font-style: italic;
 }
 
 .progress-container {
@@ -518,13 +597,6 @@ textarea.input-field {
     margin-left: 10px;
 }
 
-.no-questions {
-    color: var(--text-light);
-    text-align: center;
-    padding: 40px 20px;
-    font-style: italic;
-}
-
 .edit-content {
     text-align: left;
 }
@@ -604,6 +676,17 @@ textarea.input-field {
     }
 
     .question-item-actions {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+
+    .quiz-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .quiz-card-actions {
         margin-left: 0;
         align-self: flex-end;
     }

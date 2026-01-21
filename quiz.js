@@ -78,70 +78,105 @@ Hvor "correct" er index (0-3) for det korrekte svar.`;
     }
 }
 
-class QuestionManager {
+class QuizManager {
     constructor() {
-        this.questions = this.loadQuestions();
+        this.quizzes = this.loadQuizzes();
     }
 
-    loadQuestions() {
-        const stored = localStorage.getItem('quizQuestions');
+    loadQuizzes() {
+        const stored = localStorage.getItem('quizzes');
         return stored ? JSON.parse(stored) : [];
     }
 
-    saveQuestions() {
-        localStorage.setItem('quizQuestions', JSON.stringify(this.questions));
+    saveQuizzes() {
+        localStorage.setItem('quizzes', JSON.stringify(this.quizzes));
     }
 
-    addQuestions(newQuestions) {
-        const questionsWithIds = newQuestions.map(q => ({
-            ...q,
-            id: this.generateId()
-        }));
-        this.questions = [...this.questions, ...questionsWithIds];
-        this.saveQuestions();
-        return questionsWithIds.length;
-    }
-
-    addQuestion(question) {
-        const questionWithId = {
-            ...question,
-            id: this.generateId()
+    createQuiz(name, description = '') {
+        const quiz = {
+            id: this.generateId(),
+            name,
+            description,
+            questions: [],
+            createdAt: new Date().toISOString()
         };
-        this.questions.push(questionWithId);
-        this.saveQuestions();
-        return questionWithId;
+        this.quizzes.push(quiz);
+        this.saveQuizzes();
+        return quiz;
     }
 
-    updateQuestion(id, updatedQuestion) {
-        const index = this.questions.findIndex(q => q.id === id);
+    updateQuiz(id, updates) {
+        const index = this.quizzes.findIndex(q => q.id === id);
         if (index !== -1) {
-            this.questions[index] = { ...updatedQuestion, id };
-            this.saveQuestions();
-            return true;
+            this.quizzes[index] = { ...this.quizzes[index], ...updates };
+            this.saveQuizzes();
+            return this.quizzes[index];
+        }
+        return null;
+    }
+
+    deleteQuiz(id) {
+        this.quizzes = this.quizzes.filter(q => q.id !== id);
+        this.saveQuizzes();
+    }
+
+    getQuiz(id) {
+        return this.quizzes.find(q => q.id === id);
+    }
+
+    getAllQuizzes() {
+        return this.quizzes;
+    }
+
+    addQuestionToQuiz(quizId, question) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            const questionWithId = { ...question, id: this.generateId() };
+            quiz.questions.push(questionWithId);
+            this.saveQuizzes();
+            return questionWithId;
+        }
+        return null;
+    }
+
+    addQuestionsToQuiz(quizId, questions) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            const questionsWithIds = questions.map(q => ({ ...q, id: this.generateId() }));
+            quiz.questions = [...quiz.questions, ...questionsWithIds];
+            this.saveQuizzes();
+            return questionsWithIds.length;
+        }
+        return 0;
+    }
+
+    updateQuestion(quizId, questionId, updatedQuestion) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            const index = quiz.questions.findIndex(q => q.id === questionId);
+            if (index !== -1) {
+                quiz.questions[index] = { ...updatedQuestion, id: questionId };
+                this.saveQuizzes();
+                return true;
+            }
         }
         return false;
     }
 
-    deleteQuestion(id) {
-        this.questions = this.questions.filter(q => q.id !== id);
-        this.saveQuestions();
+    deleteQuestion(quizId, questionId) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            quiz.questions = quiz.questions.filter(q => q.id !== questionId);
+            this.saveQuizzes();
+        }
     }
 
-    deleteAllQuestions() {
-        this.questions = [];
-        this.saveQuestions();
-    }
-
-    getQuestion(id) {
-        return this.questions.find(q => q.id === id);
-    }
-
-    getAllQuestions() {
-        return this.questions;
-    }
-
-    getQuestionCount() {
-        return this.questions.length;
+    deleteAllQuestions(quizId) {
+        const quiz = this.getQuiz(quizId);
+        if (quiz) {
+            quiz.questions = [];
+            this.saveQuizzes();
+        }
     }
 
     generateId() {
@@ -151,13 +186,17 @@ class QuestionManager {
 
 class QuizApp {
     constructor() {
-        this.questionManager = new QuestionManager();
+        this.quizManager = new QuizManager();
+        this.currentQuizId = null;
         this.selectedFiles = [];
         this.editingQuestionId = null;
+        this.editingQuizId = null;
         this.init();
     }
 
     init() {
+        this.quizListScreen = document.getElementById('quiz-list-screen');
+        this.editQuizScreen = document.getElementById('edit-quiz-screen');
         this.setupScreen = document.getElementById('setup-screen');
         this.startScreen = document.getElementById('start-screen');
         this.questionScreen = document.getElementById('question-screen');
@@ -178,6 +217,10 @@ class QuizApp {
             this.apiKeyInput.value = savedApiKey;
         }
 
+        document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
+        document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
+        document.getElementById('cancel-quiz-btn').addEventListener('click', () => this.showQuizListScreen());
+
         this.pdfInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.generateBtn.addEventListener('click', () => this.generateQuestions());
         this.skipBtn.addEventListener('click', () => this.goToStartScreen());
@@ -186,6 +229,7 @@ class QuizApp {
         document.getElementById('start-btn').addEventListener('click', () => this.startQuiz());
         document.getElementById('manage-btn').addEventListener('click', () => this.showManageScreen());
         document.getElementById('back-to-setup-btn').addEventListener('click', () => this.showScreen(this.setupScreen));
+        document.getElementById('back-to-list-btn').addEventListener('click', () => this.showQuizListScreen());
 
         document.getElementById('add-question-btn').addEventListener('click', () => this.showAddQuestionForm());
         document.getElementById('delete-all-btn').addEventListener('click', () => this.deleteAllQuestions());
@@ -196,9 +240,129 @@ class QuizApp {
 
         document.getElementById('next-btn').addEventListener('click', () => this.nextQuestion());
         document.getElementById('restart-btn').addEventListener('click', () => this.goToStartScreen());
+        document.getElementById('back-to-list-from-result-btn').addEventListener('click', () => this.showQuizListScreen());
         
+        this.showQuizListScreen();
+    }
+
+    showQuizListScreen() {
+        this.currentQuizId = null;
+        this.renderQuizList();
+        this.showScreen(this.quizListScreen);
+    }
+
+    renderQuizList() {
+        const container = document.getElementById('quizzes-list');
+        const quizzes = this.quizManager.getAllQuizzes();
+        
+        if (quizzes.length === 0) {
+            container.innerHTML = '<p class="no-items">Ingen quizzer endnu. Opret din første quiz!</p>';
+            return;
+        }
+
+        container.innerHTML = quizzes.map(quiz => `
+            <div class="quiz-card" data-id="${quiz.id}">
+                <div class="quiz-card-content">
+                    <h3 class="quiz-card-title">${this.escapeHtml(quiz.name)}</h3>
+                    <p class="quiz-card-description">${quiz.description ? this.escapeHtml(quiz.description) : 'Ingen beskrivelse'}</p>
+                    <span class="quiz-card-count">${quiz.questions.length} spørgsmål</span>
+                </div>
+                <div class="quiz-card-actions">
+                    <button class="btn btn-primary btn-small open-quiz-btn" data-id="${quiz.id}">Åbn</button>
+                    <button class="btn-icon edit-quiz-btn" title="Rediger" data-id="${quiz.id}">✏️</button>
+                    <button class="btn-icon delete-quiz-btn" title="Slet" data-id="${quiz.id}">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.open-quiz-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openQuiz(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.edit-quiz-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showEditQuizForm(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.delete-quiz-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteQuiz(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.quiz-card').forEach(card => {
+            card.addEventListener('click', () => {
+                this.openQuiz(card.dataset.id);
+            });
+        });
+    }
+
+    showCreateQuizForm() {
+        this.editingQuizId = null;
+        document.getElementById('edit-quiz-title').textContent = 'Opret ny quiz';
+        document.getElementById('quiz-name').value = '';
+        document.getElementById('quiz-description').value = '';
+        this.showScreen(this.editQuizScreen);
+    }
+
+    showEditQuizForm(quizId) {
+        const quiz = this.quizManager.getQuiz(quizId);
+        if (!quiz) return;
+
+        this.editingQuizId = quizId;
+        document.getElementById('edit-quiz-title').textContent = 'Rediger quiz';
+        document.getElementById('quiz-name').value = quiz.name;
+        document.getElementById('quiz-description').value = quiz.description || '';
+        this.showScreen(this.editQuizScreen);
+    }
+
+    saveQuiz() {
+        const name = document.getElementById('quiz-name').value.trim();
+        const description = document.getElementById('quiz-description').value.trim();
+
+        if (!name) {
+            alert('Indtast venligst et navn til quizzen');
+            return;
+        }
+
+        if (this.editingQuizId) {
+            this.quizManager.updateQuiz(this.editingQuizId, { name, description });
+        } else {
+            const quiz = this.quizManager.createQuiz(name, description);
+            this.currentQuizId = quiz.id;
+            document.getElementById('current-quiz-name').textContent = name;
+            this.showScreen(this.setupScreen);
+            this.updateGenerateButton();
+            this.updateSkipButton();
+            return;
+        }
+
+        this.showQuizListScreen();
+    }
+
+    deleteQuiz(quizId) {
+        const quiz = this.quizManager.getQuiz(quizId);
+        if (quiz && confirm(`Er du sikker på, at du vil slette "${quiz.name}"? Dette kan ikke fortrydes.`)) {
+            this.quizManager.deleteQuiz(quizId);
+            this.renderQuizList();
+        }
+    }
+
+    openQuiz(quizId) {
+        this.currentQuizId = quizId;
+        const quiz = this.quizManager.getQuiz(quizId);
+        if (!quiz) return;
+
+        document.getElementById('current-quiz-name').textContent = quiz.name;
         this.updateGenerateButton();
         this.updateSkipButton();
+        this.showScreen(this.setupScreen);
     }
 
     handleFileSelect(e) {
@@ -216,8 +380,9 @@ class QuizApp {
     }
 
     updateSkipButton() {
-        const hasQuestions = this.questionManager.getQuestionCount() > 0;
-        this.skipBtn.textContent = hasQuestions ? 'Fortsæt til quiz' : 'Start uden spørgsmål';
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        const hasQuestions = quiz && quiz.questions.length > 0;
+        this.skipBtn.textContent = hasQuestions ? 'Fortsæt til quiz' : 'Spring over';
     }
 
     showStatus(message, type) {
@@ -264,13 +429,17 @@ class QuizApp {
             }
         }
         
-        const addedCount = this.questionManager.addQuestions(allNewQuestions);
+        const addedCount = this.quizManager.addQuestionsToQuiz(this.currentQuizId, allNewQuestions);
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
         
         this.showStatus(
-            `✓ Færdig! ${addedCount} nye spørgsmål tilføjet. Total: ${this.questionManager.getQuestionCount()} spørgsmål.`,
+            `✓ Færdig! ${addedCount} nye spørgsmål tilføjet. Total: ${quiz.questions.length} spørgsmål.`,
             'success'
         );
         
+        this.selectedFiles = [];
+        this.pdfInput.value = '';
+        this.fileList.innerHTML = '';
         this.updateSkipButton();
         
         setTimeout(() => {
@@ -280,7 +449,14 @@ class QuizApp {
 
     goToStartScreen() {
         this.hideStatus();
-        const count = this.questionManager.getQuestionCount();
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        if (!quiz) {
+            this.showQuizListScreen();
+            return;
+        }
+
+        document.getElementById('start-quiz-name').textContent = quiz.name;
+        const count = quiz.questions.length;
         const startBtn = document.getElementById('start-btn');
         
         if (count === 0) {
@@ -301,20 +477,24 @@ class QuizApp {
     }
 
     showManageScreen() {
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        if (quiz) {
+            document.getElementById('manage-quiz-name').textContent = quiz.name;
+        }
         this.renderQuestionList();
         this.showScreen(this.manageScreen);
     }
 
     renderQuestionList() {
         const container = document.getElementById('questions-list');
-        const questions = this.questionManager.getAllQuestions();
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
         
-        if (questions.length === 0) {
-            container.innerHTML = '<p class="no-questions">Ingen spørgsmål endnu. Tilføj spørgsmål manuelt eller generer fra PDF.</p>';
+        if (!quiz || quiz.questions.length === 0) {
+            container.innerHTML = '<p class="no-items">Ingen spørgsmål endnu. Tilføj spørgsmål manuelt eller generer fra PDF.</p>';
             return;
         }
 
-        container.innerHTML = questions.map((q, index) => `
+        container.innerHTML = quiz.questions.map((q, index) => `
             <div class="question-item" data-id="${q.id}">
                 <div class="question-item-content">
                     <span class="question-number">${index + 1}.</span>
@@ -346,6 +526,12 @@ class QuizApp {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     showAddQuestionForm() {
         this.editingQuestionId = null;
         document.getElementById('edit-title').textContent = 'Tilføj nyt spørgsmål';
@@ -358,11 +544,14 @@ class QuizApp {
         this.showScreen(this.editScreen);
     }
 
-    showEditQuestionForm(id) {
-        const question = this.questionManager.getQuestion(id);
+    showEditQuestionForm(questionId) {
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        if (!quiz) return;
+        
+        const question = quiz.questions.find(q => q.id === questionId);
         if (!question) return;
 
-        this.editingQuestionId = id;
+        this.editingQuestionId = questionId;
         document.getElementById('edit-title').textContent = 'Rediger spørgsmål';
         document.getElementById('edit-question').value = question.question;
         document.getElementById('edit-option-0').value = question.options[0];
@@ -395,24 +584,24 @@ class QuizApp {
         }
 
         if (this.editingQuestionId) {
-            this.questionManager.updateQuestion(this.editingQuestionId, question);
+            this.quizManager.updateQuestion(this.currentQuizId, this.editingQuestionId, question);
         } else {
-            this.questionManager.addQuestion(question);
+            this.quizManager.addQuestionToQuiz(this.currentQuizId, question);
         }
 
         this.showManageScreen();
     }
 
-    deleteQuestion(id) {
+    deleteQuestion(questionId) {
         if (confirm('Er du sikker på, at du vil slette dette spørgsmål?')) {
-            this.questionManager.deleteQuestion(id);
+            this.quizManager.deleteQuestion(this.currentQuizId, questionId);
             this.renderQuestionList();
         }
     }
 
     deleteAllQuestions() {
         if (confirm('Er du sikker på, at du vil slette ALLE spørgsmål? Dette kan ikke fortrydes.')) {
-            this.questionManager.deleteAllQuestions();
+            this.quizManager.deleteAllQuestions(this.currentQuizId);
             this.renderQuestionList();
         }
     }
@@ -427,13 +616,13 @@ class QuizApp {
     }
 
     startQuiz() {
-        const allQuestions = this.questionManager.getAllQuestions();
-        if (allQuestions.length === 0) {
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        if (!quiz || quiz.questions.length === 0) {
             alert('Du skal have mindst ét spørgsmål for at starte quizzen.');
             return;
         }
 
-        this.quizQuestions = this.shuffleArray(allQuestions).slice(0, 20);
+        this.quizQuestions = this.shuffleArray(quiz.questions).slice(0, 20);
         this.currentIndex = 0;
         this.score = 0;
         this.answers = [];
@@ -513,6 +702,9 @@ class QuizApp {
 
     showResults() {
         this.showScreen(this.resultScreen);
+        
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        document.getElementById('result-quiz-name').textContent = quiz ? quiz.name : '';
         
         const progressFill = document.getElementById('progress-fill');
         const scoreNumber = document.getElementById('score-number');
