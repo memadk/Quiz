@@ -864,9 +864,46 @@ class QuizApp {
         this.skipBtn.textContent = hasQuestions ? i18n.t('continueToQuiz') : i18n.t('skip');
     }
 
+    renderSkeletons() {
+        const existing = document.querySelector('.skeleton-container');
+        if (existing) return;
+
+        const container = document.createElement('div');
+        container.className = 'skeleton-container';
+        
+        for (let i = 0; i < 3; i++) {
+            container.innerHTML += `
+                <div class="skeleton-card">
+                    <div class="skeleton-line title"></div>
+                    <div class="skeleton-line option"></div>
+                    <div class="skeleton-line option"></div>
+                    <div class="skeleton-line option"></div>
+                    <div class="skeleton-line option"></div>
+                </div>
+            `;
+        }
+        
+        if (this.generationStatus && this.generationStatus.parentNode) {
+            this.generationStatus.parentNode.insertBefore(container, this.generationStatus.nextSibling);
+        }
+    }
+
+    removeSkeletons() {
+        const container = document.querySelector('.skeleton-container');
+        if (container) {
+            container.remove();
+        }
+    }
+
     showStatus(message, type) {
         this.generationStatus.className = `generation-status active ${type}`;
         this.generationStatus.innerHTML = message;
+        
+        if (type === 'loading') {
+            this.renderSkeletons();
+        } else {
+            this.removeSkeletons();
+        }
     }
 
     hideStatus() {
