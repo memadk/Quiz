@@ -455,6 +455,8 @@ class QuizApp {
 
         document.addEventListener('click', (e) => this.closeDropdownOnClickOutside(e));
 
+        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+
         document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
         document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
         document.getElementById('cancel-quiz-btn').addEventListener('click', () => this.showQuizListScreen());
@@ -766,6 +768,62 @@ class QuizApp {
         }
         menu.classList.toggle('active');
         this.activeDropdown = menu.classList.contains('active') ? menu : null;
+    }
+
+    handleKeyboardShortcuts(e) {
+        if (this.settingsModal.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                this.closeSettings();
+            }
+            return;
+        }
+
+        if (this.activeDropdown) {
+            if (e.key === 'Escape') {
+                this.activeDropdown.classList.remove('active');
+                this.activeDropdown = null;
+            }
+            return;
+        }
+
+        if (this.questionScreen.classList.contains('active')) {
+            const nextBtn = document.getElementById('next-btn');
+            
+            if (e.key >= '1' && e.key <= '4') {
+                const optionIndex = parseInt(e.key) - 1;
+                const options = document.querySelectorAll('#options-container .option');
+                if (options[optionIndex] && !options[optionIndex].classList.contains('disabled')) {
+                    options[optionIndex].click();
+                }
+                e.preventDefault();
+            }
+            
+            if (e.key === 'Enter' && !nextBtn.disabled) {
+                nextBtn.click();
+                e.preventDefault();
+            }
+        }
+
+        if (this.startScreen.classList.contains('active')) {
+            if (e.key === 'Enter') {
+                const startBtn = document.getElementById('start-btn');
+                if (!startBtn.disabled) {
+                    startBtn.click();
+                    e.preventDefault();
+                }
+            }
+        }
+
+        if (this.resultScreen.classList.contains('active')) {
+            if (e.key === 'Enter') {
+                document.getElementById('restart-btn').click();
+                e.preventDefault();
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('back-to-list-from-result-btn').click();
+                e.preventDefault();
+            }
+        }
     }
 
     initDropZone() {
