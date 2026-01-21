@@ -507,6 +507,8 @@ main {
 .quiz-card:hover {
     border-color: var(--primary-color);
     background: var(--hover-bg);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
 }
 
 .quiz-card-content {
