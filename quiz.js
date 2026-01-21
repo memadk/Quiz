@@ -413,6 +413,7 @@ class QuizApp {
         this.selectedFiles = [];
         this.editingQuestionId = null;
         this.editingQuizId = null;
+        this.activeDropdown = null;
         this.init();
     }
 
@@ -425,6 +426,7 @@ class QuizApp {
         this.resultScreen = document.getElementById('result-screen');
         this.manageScreen = document.getElementById('manage-screen');
         this.editScreen = document.getElementById('edit-screen');
+        this.settingsModal = document.getElementById('settings-modal');
         
         this.apiKeyInput = document.getElementById('api-key');
         this.pdfInput = document.getElementById('pdf-input');
@@ -449,6 +451,9 @@ class QuizApp {
 
         this.initTheme();
         this.initDropZone();
+        this.initSettingsModal();
+
+        document.addEventListener('click', (e) => this.closeDropdownOnClickOutside(e));
 
         document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
         document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
@@ -461,7 +466,6 @@ class QuizApp {
         this.pdfInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.generateBtn.addEventListener('click', () => this.generateQuestions());
         this.skipBtn.addEventListener('click', () => this.goToStartScreen());
-        this.apiKeyInput.addEventListener('input', () => this.updateGenerateButton());
         
         document.getElementById('start-btn').addEventListener('click', () => this.startQuiz());
         document.getElementById('manage-btn').addEventListener('click', () => this.showManageScreen());
@@ -517,9 +521,14 @@ class QuizApp {
                 </div>
                 <div class="quiz-card-actions">
                     <button class="btn btn-primary btn-small open-quiz-btn" data-id="${quiz.id}">${i18n.t('open')}</button>
-                    <button class="btn-icon export-quiz-btn" title="${i18n.t('export')}" data-id="${quiz.id}">📤</button>
-                    <button class="btn-icon edit-quiz-btn" title="${i18n.t('edit')}" data-id="${quiz.id}">✏️</button>
-                    <button class="btn-icon delete-quiz-btn" title="${i18n.t('delete')}" data-id="${quiz.id}">🗑️</button>
+                    <div class="dropdown">
+                        <button class="dropdown-toggle" title="${i18n.t('more')}">⋮</button>
+                        <div class="dropdown-menu">
+                            <button class="dropdown-item export-quiz-btn" data-id="${quiz.id}">📤 ${i18n.t('export')}</button>
+                            <button class="dropdown-item edit-quiz-btn" data-id="${quiz.id}">✏️ ${i18n.t('edit')}</button>
+                            <button class="dropdown-item danger delete-quiz-btn" data-id="${quiz.id}">🗑️ ${i18n.t('delete')}</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -528,6 +537,14 @@ class QuizApp {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openQuiz(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.dropdown-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const menu = btn.nextElementSibling;
+                this.toggleDropdown(menu);
             });
         });
 
@@ -686,11 +703,14 @@ class QuizApp {
         
         this.setTheme(theme);
         
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            this.setTheme(newTheme);
-            localStorage.setItem('quiz_theme', newTheme);
+        document.getElementById('theme-light').addEventListener('click', () => {
+            this.setTheme('light');
+            localStorage.setItem('quiz_theme', 'light');
+        });
+
+        document.getElementById('theme-dark').addEventListener('click', () => {
+            this.setTheme('dark');
+            localStorage.setItem('quiz_theme', 'dark');
         });
 
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -702,7 +722,50 @@ class QuizApp {
 
     setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+        document.querySelectorAll('.theme-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.theme === theme);
+        });
+    }
+
+    initSettingsModal() {
+        const settingsBtn = document.getElementById('settings-btn');
+        const closeBtn = document.getElementById('close-settings-btn');
+        
+        settingsBtn.addEventListener('click', () => this.openSettings());
+        closeBtn.addEventListener('click', () => this.closeSettings());
+        
+        this.settingsModal.addEventListener('click', (e) => {
+            if (e.target === this.settingsModal) {
+                this.closeSettings();
+            }
+        });
+
+        this.apiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('openai_api_key', this.apiKeyInput.value.trim());
+        });
+    }
+
+    openSettings() {
+        this.settingsModal.classList.add('active');
+    }
+
+    closeSettings() {
+        this.settingsModal.classList.remove('active');
+    }
+
+    closeDropdownOnClickOutside(e) {
+        if (this.activeDropdown && !e.target.closest('.dropdown')) {
+            this.activeDropdown.classList.remove('active');
+            this.activeDropdown = null;
+        }
+    }
+
+    toggleDropdown(menu) {
+        if (this.activeDropdown && this.activeDropdown !== menu) {
+            this.activeDropdown.classList.remove('active');
+        }
+        menu.classList.toggle('active');
+        this.activeDropdown = menu.classList.contains('active') ? menu : null;
     }
 
     initDropZone() {
@@ -731,7 +794,8 @@ class QuizApp {
     }
 
     updateGenerateButton() {
-        const hasApiKey = this.apiKeyInput.value.trim().length > 0;
+        const apiKey = localStorage.getItem('openai_api_key') || '';
+        const hasApiKey = apiKey.trim().length > 0;
         const hasFiles = this.selectedFiles.length > 0;
         this.generateBtn.disabled = !(hasApiKey && hasFiles);
     }
@@ -752,8 +816,13 @@ class QuizApp {
     }
 
     async generateQuestions() {
-        const apiKey = this.apiKeyInput.value.trim();
-        localStorage.setItem('openai_api_key', apiKey);
+        const apiKey = localStorage.getItem('openai_api_key') || '';
+        
+        if (!apiKey.trim()) {
+            alert(i18n.t('noApiKey'));
+            this.openSettings();
+            return;
+        }
         
         const openai = new OpenAIService(apiKey);
         let allNewQuestions = [];

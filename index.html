@@ -14,16 +14,41 @@
         <header>
             <div class="header-top">
                 <h1 data-i18n="title">PDF Quiz</h1>
-                <div class="header-controls">
-                    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
-                    <select id="language-select" class="language-select">
-                        <option value="da">🇩🇰 Dansk</option>
-                        <option value="en">🇬🇧 English</option>
-                    </select>
-                </div>
+                <button id="settings-btn" class="settings-btn" title="Settings">⚙️</button>
             </div>
             <p class="subtitle" data-i18n="subtitle">Opret og administrer dine quizzer</p>
         </header>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 data-i18n="settings">Indstillinger</h2>
+                    <button id="close-settings-btn" class="modal-close">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="api-key" data-i18n="apiKey">OpenAI API-nøgle:</label>
+                        <input type="password" id="api-key" placeholder="sk-..." class="input-field">
+                        <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
+                    </div>
+                    <div class="setting-group">
+                        <label data-i18n="language">Sprog:</label>
+                        <select id="language-select" class="input-field">
+                            <option value="da">🇩🇰 Dansk</option>
+                            <option value="en">🇬🇧 English</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label data-i18n="theme">Tema:</label>
+                        <div class="theme-switch">
+                            <button id="theme-light" class="theme-option" data-theme="light">☀️ <span data-i18n="themeLight">Lyst</span></button>
+                            <button id="theme-dark" class="theme-option" data-theme="dark">🌙 <span data-i18n="themeDark">Mørkt</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <main id="quiz-container">
             <div id="quiz-list-screen" class="screen active">
@@ -66,12 +91,6 @@
                 <div class="setup-content">
                     <h2 id="current-quiz-name">Quiz</h2>
                     
-                    <div class="setup-section">
-                        <label for="api-key" data-i18n="apiKey">OpenAI API-nøgle:</label>
-                        <input type="password" id="api-key" placeholder="sk-..." class="input-field">
-                        <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
-                    </div>
-
                     <div class="setup-section">
                         <label data-i18n="selectFiles">Vælg filer:</label>
                         <div id="drop-zone" class="drop-zone">

@@ -84,7 +84,14 @@ const translations = {
         exportAll: 'Eksportér alle',
         noQuizzesToExport: 'Ingen quizzer at eksportere.',
         importSuccess: '{count} quiz(zer) importeret!',
-        importError: 'Kunne ikke importere filen. Tjek at formatet er korrekt.'
+        importError: 'Kunne ikke importere filen. Tjek at formatet er korrekt.',
+        settings: 'Indstillinger',
+        language: 'Sprog:',
+        theme: 'Tema:',
+        themeLight: 'Lyst',
+        themeDark: 'Mørkt',
+        more: 'Mere',
+        noApiKey: 'Husk at indtaste din OpenAI API-nøgle i indstillinger (⚙️)'
     },
     en: {
         title: 'PDF Quiz',
@@ -171,7 +178,14 @@ const translations = {
         exportAll: 'Export all',
         noQuizzesToExport: 'No quizzes to export.',
         importSuccess: '{count} quiz(zes) imported!',
-        importError: 'Could not import the file. Please check the format.'
+        importError: 'Could not import the file. Please check the format.',
+        settings: 'Settings',
+        language: 'Language:',
+        theme: 'Theme:',
+        themeLight: 'Light',
+        themeDark: 'Dark',
+        more: 'More',
+        noApiKey: 'Remember to enter your OpenAI API key in settings (⚙️)'
     }
 };
 
