@@ -1,22 +1,27 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-class PDFReader {
-    static async extractText(file) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
-        }
-        
-        return fullText;
+class DocumentReader {
+    static getSupportedExtensions() {
+        return ['.pdf', '.txt', '.md', '.docx'];
     }
 
     static async extractTextWithPages(file) {
+        const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        
+        switch (extension) {
+            case '.pdf':
+                return await this.extractFromPDF(file);
+            case '.txt':
+            case '.md':
+                return await this.extractFromText(file);
+            case '.docx':
+                return await this.extractFromDocx(file);
+            default:
+                throw new Error(`Unsupported file type: ${extension}`);
+        }
+    }
+
+    static async extractFromPDF(file) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const pages = [];
@@ -38,7 +43,60 @@ class PDFReader {
             fullText: pages.map(p => `[Side ${p.pageNumber}] ${p.text}`).join('\n\n')
         };
     }
+
+    static async extractFromText(file) {
+        const text = await file.text();
+        const lines = text.split('\n');
+        const linesPerPage = 50;
+        const pages = [];
+        
+        for (let i = 0; i < lines.length; i += linesPerPage) {
+            const pageNumber = Math.floor(i / linesPerPage) + 1;
+            const pageText = lines.slice(i, i + linesPerPage).join('\n');
+            pages.push({
+                pageNumber: pageNumber,
+                text: pageText
+            });
+        }
+        
+        return {
+            fileName: file.name,
+            totalPages: pages.length,
+            pages: pages,
+            fullText: pages.map(p => `[Side ${p.pageNumber}] ${p.text}`).join('\n\n')
+        };
+    }
+
+    static async extractFromDocx(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+        const text = result.value;
+        const lines = text.split('\n');
+        const linesPerPage = 50;
+        const pages = [];
+        
+        for (let i = 0; i < lines.length; i += linesPerPage) {
+            const pageNumber = Math.floor(i / linesPerPage) + 1;
+            const pageText = lines.slice(i, i + linesPerPage).join('\n');
+            pages.push({
+                pageNumber: pageNumber,
+                text: pageText
+            });
+        }
+        
+        return {
+            fileName: file.name,
+            totalPages: pages.length,
+            pages: pages,
+            fullText: pages.map(p => `[Side ${p.pageNumber}] ${p.text}`).join('\n\n')
+        };
+    }
 }
+
+// Keep PDFReader as alias for backward compatibility
+const PDFReader = {
+    extractTextWithPages: (file) => DocumentReader.extractTextWithPages(file)
+};
 
 class OpenAIService {
     constructor(apiKey) {
@@ -389,6 +447,9 @@ class QuizApp {
             this.updateUI();
         });
 
+        this.initTheme();
+        this.initDropZone();
+
         document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
         document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
         document.getElementById('cancel-quiz-btn').addEventListener('click', () => this.showQuizListScreen());
@@ -561,11 +622,112 @@ class QuizApp {
     }
 
     handleFileSelect(e) {
-        this.selectedFiles = Array.from(e.target.files);
-        this.fileList.innerHTML = this.selectedFiles.map(f => 
-            `<div class="file-item">${f.name}</div>`
-        ).join('');
+        this.addFiles(Array.from(e.target.files));
+    }
+
+    addFiles(files) {
+        const validExtensions = DocumentReader.getSupportedExtensions();
+        const validFiles = files.filter(f => {
+            const ext = f.name.toLowerCase().substring(f.name.lastIndexOf('.'));
+            return validExtensions.includes(ext);
+        });
+        
+        this.selectedFiles = [...this.selectedFiles, ...validFiles];
+        this.renderFileList();
         this.updateGenerateButton();
+    }
+
+    removeFile(index) {
+        this.selectedFiles.splice(index, 1);
+        this.renderFileList();
+        this.updateGenerateButton();
+    }
+
+    renderFileList() {
+        if (this.selectedFiles.length === 0) {
+            this.fileList.innerHTML = '';
+            return;
+        }
+
+        this.fileList.innerHTML = this.selectedFiles.map((f, index) => `
+            <div class="file-item">
+                <div class="file-item-info">
+                    <span class="file-item-icon">${this.getFileIcon(f.name)}</span>
+                    <span class="file-item-name">${this.escapeHtml(f.name)}</span>
+                </div>
+                <button class="file-item-remove" data-index="${index}" title="Remove">✕</button>
+            </div>
+        `).join('');
+
+        this.fileList.querySelectorAll('.file-item-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeFile(parseInt(btn.dataset.index));
+            });
+        });
+    }
+
+    getFileIcon(filename) {
+        const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+        const icons = {
+            '.pdf': '📕',
+            '.docx': '📘',
+            '.doc': '📘',
+            '.txt': '📄',
+            '.md': '📝'
+        };
+        return icons[ext] || '📄';
+    }
+
+    initTheme() {
+        const savedTheme = localStorage.getItem('quiz_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        
+        this.setTheme(theme);
+        
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            this.setTheme(newTheme);
+            localStorage.setItem('quiz_theme', newTheme);
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('quiz_theme')) {
+                this.setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    }
+
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    initDropZone() {
+        const dropZone = document.getElementById('drop-zone');
+        
+        dropZone.addEventListener('click', () => {
+            this.pdfInput.click();
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            this.addFiles(files);
+        });
     }
 
     updateGenerateButton() {

@@ -6,6 +6,7 @@
     <title>PDF Quiz Generator</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="i18n.js"></script>
 </head>
 <body>
@@ -13,10 +14,13 @@
         <header>
             <div class="header-top">
                 <h1 data-i18n="title">PDF Quiz</h1>
-                <select id="language-select" class="language-select">
-                    <option value="da">🇩🇰 Dansk</option>
-                    <option value="en">🇬🇧 English</option>
-                </select>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+                    <select id="language-select" class="language-select">
+                        <option value="da">🇩🇰 Dansk</option>
+                        <option value="en">🇬🇧 English</option>
+                    </select>
+                </div>
             </div>
             <p class="subtitle" data-i18n="subtitle">Opret og administrer dine quizzer</p>
         </header>
@@ -69,8 +73,15 @@
                     </div>
 
                     <div class="setup-section">
-                        <label data-i18n="selectPdfFiles">Vælg PDF-filer:</label>
-                        <input type="file" id="pdf-input" accept=".pdf" multiple class="file-input">
+                        <label data-i18n="selectFiles">Vælg filer:</label>
+                        <div id="drop-zone" class="drop-zone">
+                            <div class="drop-zone-content">
+                                <span class="drop-zone-icon">📄</span>
+                                <p class="drop-zone-text" data-i18n="dropZoneText">Træk filer hertil eller klik for at vælge</p>
+                                <p class="drop-zone-hint" data-i18n="dropZoneHint">PDF, Word, TXT, Markdown</p>
+                            </div>
+                            <input type="file" id="pdf-input" accept=".pdf,.txt,.md,.docx" multiple class="file-input-hidden">
+                        </div>
                         <div id="file-list" class="file-list"></div>
                     </div>
 
