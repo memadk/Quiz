@@ -957,8 +957,22 @@ class QuizApp {
     }
 
     showScreen(screen) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        screen.classList.add('active');
+        const currentScreen = document.querySelector('.screen.active');
+        
+        if (!currentScreen || currentScreen === screen) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active', 'exiting');
+            });
+            screen.classList.add('active');
+            return;
+        }
+        
+        currentScreen.classList.add('exiting');
+        
+        setTimeout(() => {
+            currentScreen.classList.remove('active', 'exiting');
+            screen.classList.add('active');
+        }, 200); // Must match .screen.exiting animation duration in CSS
     }
 
     showManageScreen() {
