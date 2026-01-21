@@ -126,6 +126,18 @@
                 <div class="start-content">
                     <h2 id="start-quiz-name">Quiz klar!</h2>
                     <p id="question-count" class="question-count"></p>
+                    <div class="timer-setting">
+                        <label class="timer-toggle">
+                            <input type="checkbox" id="timer-enabled">
+                            <span class="timer-toggle-label" data-i18n="timerMode">Timer mode</span>
+                        </label>
+                        <select id="timer-duration" class="input-field input-field-small" disabled>
+                            <option value="15">15s</option>
+                            <option value="30" selected>30s</option>
+                            <option value="60">60s</option>
+                            <option value="90">90s</option>
+                        </select>
+                    </div>
                     <button id="start-btn" class="btn btn-primary" data-i18n="startQuiz">Start Quiz</button>
                     <button id="manage-btn" class="btn btn-secondary" data-i18n="manageQuestions">Administrer spørgsmål</button>
                     <button id="back-to-setup-btn" class="btn btn-secondary" data-i18n="addMorePdfs">Tilføj flere PDF'er</button>
@@ -185,6 +197,13 @@
                         <div id="progress-fill" class="progress-fill"></div>
                     </div>
                     <span id="progress-text" class="progress-text"></span>
+                    <div id="timer-display" class="timer-display hidden">
+                        <svg class="timer-ring" width="48" height="48">
+                            <circle class="timer-ring__background" stroke-width="4" fill="transparent" r="20" cx="24" cy="24"/>
+                            <circle class="timer-ring__circle" stroke-width="4" fill="transparent" r="20" cx="24" cy="24"/>
+                        </svg>
+                        <span id="timer-text" class="timer-text">30</span>
+                    </div>
                 </div>
 
                 <div class="question-container">

@@ -95,7 +95,9 @@ const translations = {
         themeLight: 'Lyst',
         themeDark: 'Mørkt',
         more: 'Mere',
-        noApiKey: 'Husk at indtaste din OpenAI API-nøgle i indstillinger (⚙️)'
+        noApiKey: 'Husk at indtaste din OpenAI API-nøgle i indstillinger (⚙️)',
+        timerMode: 'Timer mode',
+        timeUp: 'Tiden er udløbet!'
     },
     en: {
         title: 'PDF Quiz',
@@ -193,7 +195,9 @@ const translations = {
         themeLight: 'Light',
         themeDark: 'Dark',
         more: 'More',
-        noApiKey: 'Remember to enter your OpenAI API key in settings (⚙️)'
+        noApiKey: 'Remember to enter your OpenAI API key in settings (⚙️)',
+        timerMode: 'Timer mode',
+        timeUp: 'Time is up!'
     }
 };
 

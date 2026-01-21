@@ -450,6 +450,10 @@ class QuizApp {
         this.editingQuizId = null;
         this.activeDropdown = null;
         this.toasts = [];
+        this.timerEnabled = false;
+        this.timerDuration = 30;
+        this.timerInterval = null;
+        this.timeRemaining = 0;
         this.init();
     }
 
@@ -511,6 +515,14 @@ class QuizApp {
         document.getElementById('manage-btn').addEventListener('click', () => this.showManageScreen());
         document.getElementById('back-to-setup-btn').addEventListener('click', () => this.showScreen(this.setupScreen));
         document.getElementById('back-to-list-btn').addEventListener('click', () => this.showQuizListScreen());
+
+        document.getElementById('timer-enabled').addEventListener('change', (e) => {
+            this.timerEnabled = e.target.checked;
+            document.getElementById('timer-duration').disabled = !e.target.checked;
+        });
+        document.getElementById('timer-duration').addEventListener('change', (e) => {
+            this.timerDuration = parseInt(e.target.value);
+        });
 
         document.getElementById('add-question-btn').addEventListener('click', () => this.showAddQuestionForm());
         document.getElementById('delete-all-btn').addEventListener('click', () => this.deleteAllQuestions());
@@ -969,6 +981,78 @@ class QuizApp {
         }
     }
 
+    startTimer() {
+        this.timeRemaining = this.timerDuration;
+        this.updateTimerDisplay();
+        
+        const circumference = 2 * Math.PI * 20;
+        const circle = document.querySelector('.timer-ring__circle');
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = 0;
+        
+        this.timerInterval = setInterval(() => {
+            this.timeRemaining--;
+            this.updateTimerDisplay();
+            
+            const progress = this.timeRemaining / this.timerDuration;
+            const offset = circumference * (1 - progress);
+            circle.style.strokeDashoffset = offset;
+            
+            if (this.timeRemaining <= 0) {
+                this.handleTimeUp();
+            }
+        }, 1000);
+    }
+
+    updateTimerDisplay() {
+        const timerText = document.getElementById('timer-text');
+        const circle = document.querySelector('.timer-ring__circle');
+        
+        timerText.textContent = this.timeRemaining;
+        
+        timerText.classList.remove('warning', 'danger');
+        circle.classList.remove('warning', 'danger');
+        
+        if (this.timeRemaining <= 5) {
+            timerText.classList.add('danger');
+            circle.classList.add('danger');
+        } else if (this.timeRemaining <= 10) {
+            timerText.classList.add('warning');
+            circle.classList.add('warning');
+        }
+    }
+
+    clearTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    handleTimeUp() {
+        this.clearTimer();
+        
+        const question = this.quizQuestions[this.currentIndex];
+        const optionsContainer = document.getElementById('options-container');
+        const options = optionsContainer.querySelectorAll('.option');
+        const nextBtn = document.getElementById('next-btn');
+        
+        options.forEach(opt => opt.classList.add('disabled'));
+        options[this.currentCorrectShuffledIndex].classList.add('correct');
+        
+        this.answers.push({
+            question: question.question,
+            userAnswer: i18n.t('timeUp'),
+            correctAnswer: question.options[question.correct],
+            isCorrect: false,
+            sourceFile: question.sourceFile || null,
+            sourcePage: question.sourcePage || null,
+            sourceExcerpt: question.sourceExcerpt || null
+        });
+        
+        nextBtn.disabled = false;
+    }
+
     initDropZone() {
         const dropZone = document.getElementById('drop-zone');
         
@@ -1318,6 +1402,14 @@ class QuizApp {
         this.currentIndex = 0;
         this.score = 0;
         this.answers = [];
+        this.clearTimer();
+        
+        const timerDisplay = document.getElementById('timer-display');
+        if (this.timerEnabled) {
+            timerDisplay.classList.remove('hidden');
+        } else {
+            timerDisplay.classList.add('hidden');
+        }
         
         document.querySelector('.score-total').textContent = `/ ${this.quizQuestions.length}`;
         
@@ -1342,6 +1434,8 @@ class QuizApp {
         const progressText = document.getElementById('progress-text');
         const nextBtn = document.getElementById('next-btn');
 
+        this.clearTimer();
+
         questionText.textContent = question.question;
         
         const progress = (this.currentIndex / this.quizQuestions.length) * 100;
@@ -1363,6 +1457,10 @@ class QuizApp {
         });
 
         nextBtn.disabled = true;
+
+        if (this.timerEnabled) {
+            this.startTimer();
+        }
     }
 
     selectOption(shuffledIndex, originalIndex, button) {
@@ -1370,6 +1468,8 @@ class QuizApp {
         const optionsContainer = document.getElementById('options-container');
         const options = optionsContainer.querySelectorAll('.option');
         const nextBtn = document.getElementById('next-btn');
+        
+        this.clearTimer();
         
         options.forEach(opt => {
             opt.classList.add('disabled');
@@ -1400,6 +1500,7 @@ class QuizApp {
     }
 
     nextQuestion() {
+        this.clearTimer();
         this.currentIndex++;
         
         if (this.currentIndex < this.quizQuestions.length) {

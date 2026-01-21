@@ -1137,3 +1137,104 @@ textarea.input-field {
         font-size: 2rem;
     }
 }
+
+/* Timer Setting */
+.timer-setting {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: var(--bg-color);
+    border-radius: 8px;
+}
+
+.timer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.timer-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.timer-toggle-label {
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.input-field-small {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+/* Timer Display */
+.timer-display {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin-left: auto;
+}
+
+.timer-display.hidden {
+    display: none;
+}
+
+.timer-ring {
+    transform: rotate(-90deg);
+}
+
+.timer-ring__background {
+    stroke: var(--input-border);
+}
+
+.timer-ring__circle {
+    stroke: var(--primary-color);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+}
+
+.timer-ring__circle.warning {
+    stroke: #f59e0b;
+}
+
+.timer-ring__circle.danger {
+    stroke: var(--error-color);
+}
+
+.timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.timer-text.warning {
+    color: #f59e0b;
+}
+
+.timer-text.danger {
+    color: var(--error-color);
+    animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
