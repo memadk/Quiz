@@ -1132,6 +1132,15 @@ class QuizApp {
         this.displayQuestion();
     }
 
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
     displayQuestion() {
         const question = this.quizQuestions[this.currentIndex];
         const questionText = document.getElementById('question-text');
@@ -1146,19 +1155,24 @@ class QuizApp {
         progressFill.style.width = `${progress}%`;
         progressText.textContent = i18n.t('questionOf', { current: this.currentIndex + 1, total: this.quizQuestions.length });
 
+        const indices = question.options.map((_, i) => i);
+        const shuffledIndices = this.shuffleArray(indices);
+        this.currentShuffledIndices = shuffledIndices;
+        this.currentCorrectShuffledIndex = shuffledIndices.indexOf(question.correct);
+
         optionsContainer.innerHTML = '';
-        question.options.forEach((option, index) => {
+        shuffledIndices.forEach((originalIndex, shuffledIndex) => {
             const button = document.createElement('button');
             button.className = 'option';
-            button.textContent = option;
-            button.addEventListener('click', () => this.selectOption(index, button));
+            button.textContent = question.options[originalIndex];
+            button.addEventListener('click', () => this.selectOption(shuffledIndex, originalIndex, button));
             optionsContainer.appendChild(button);
         });
 
         nextBtn.disabled = true;
     }
 
-    selectOption(index, button) {
+    selectOption(shuffledIndex, originalIndex, button) {
         const question = this.quizQuestions[this.currentIndex];
         const optionsContainer = document.getElementById('options-container');
         const options = optionsContainer.querySelectorAll('.option');
@@ -1169,19 +1183,19 @@ class QuizApp {
             opt.classList.remove('selected');
         });
 
-        const isCorrect = index === question.correct;
+        const isCorrect = originalIndex === question.correct;
         
         if (isCorrect) {
             button.classList.add('correct');
             this.score++;
         } else {
             button.classList.add('incorrect');
-            options[question.correct].classList.add('correct');
+            options[this.currentCorrectShuffledIndex].classList.add('correct');
         }
 
         this.answers.push({
             question: question.question,
-            userAnswer: question.options[index],
+            userAnswer: question.options[originalIndex],
             correctAnswer: question.options[question.correct],
             isCorrect: isCorrect,
             sourceFile: question.sourceFile || null,
