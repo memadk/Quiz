@@ -6,40 +6,54 @@
     <title>PDF Quiz Generator</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="i18n.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>PDF Quiz</h1>
-            <p class="subtitle">Opret og administrer dine quizzer</p>
+            <div class="header-top">
+                <h1 data-i18n="title">PDF Quiz</h1>
+                <select id="language-select" class="language-select">
+                    <option value="da">🇩🇰 Dansk</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+            <p class="subtitle" data-i18n="subtitle">Opret og administrer dine quizzer</p>
         </header>
 
         <main id="quiz-container">
             <div id="quiz-list-screen" class="screen active">
                 <div class="list-content">
-                    <h2>Mine Quizzer</h2>
-                    <button id="create-quiz-btn" class="btn btn-primary">+ Opret ny quiz</button>
+                    <h2 data-i18n="myQuizzes">Mine Quizzer</h2>
+                    <div class="list-actions">
+                        <button id="create-quiz-btn" class="btn btn-primary" data-i18n="createQuiz">+ Opret ny quiz</button>
+                        <div class="import-export-actions">
+                            <button id="import-btn" class="btn btn-secondary btn-small" data-i18n="import">Importér</button>
+                            <button id="export-all-btn" class="btn btn-secondary btn-small" data-i18n="exportAll">Eksportér alle</button>
+                        </div>
+                    </div>
+                    <input type="file" id="import-input" accept=".json" style="display: none;">
                     <div id="quizzes-list" class="quizzes-list"></div>
                 </div>
             </div>
 
             <div id="edit-quiz-screen" class="screen">
                 <div class="edit-content">
-                    <h2 id="edit-quiz-title">Opret ny quiz</h2>
+                    <h2 id="edit-quiz-title" data-i18n="createNewQuiz">Opret ny quiz</h2>
                     
                     <div class="form-group">
-                        <label for="quiz-name">Navn:</label>
-                        <input type="text" id="quiz-name" class="input-field" placeholder="F.eks. Biologi - Kapitel 3">
+                        <label for="quiz-name" data-i18n="name">Navn:</label>
+                        <input type="text" id="quiz-name" class="input-field" data-i18n-placeholder="namePlaceholder" placeholder="F.eks. Biologi - Kapitel 3">
                     </div>
 
                     <div class="form-group">
-                        <label for="quiz-description">Beskrivelse (valgfrit):</label>
-                        <textarea id="quiz-description" class="input-field" rows="2" placeholder="Kort beskrivelse af quizzen..."></textarea>
+                        <label for="quiz-description" data-i18n="description">Beskrivelse (valgfrit):</label>
+                        <textarea id="quiz-description" class="input-field" rows="2" data-i18n-placeholder="descriptionPlaceholder" placeholder="Kort beskrivelse af quizzen..."></textarea>
                     </div>
 
                     <div class="edit-actions">
-                        <button id="save-quiz-btn" class="btn btn-primary">Gem</button>
-                        <button id="cancel-quiz-btn" class="btn btn-secondary">Annuller</button>
+                        <button id="save-quiz-btn" class="btn btn-primary" data-i18n="save">Gem</button>
+                        <button id="cancel-quiz-btn" class="btn btn-secondary" data-i18n="cancel">Annuller</button>
                     </div>
                 </div>
             </div>
@@ -49,21 +63,21 @@
                     <h2 id="current-quiz-name">Quiz</h2>
                     
                     <div class="setup-section">
-                        <label for="api-key">OpenAI API-nøgle:</label>
+                        <label for="api-key" data-i18n="apiKey">OpenAI API-nøgle:</label>
                         <input type="password" id="api-key" placeholder="sk-..." class="input-field">
-                        <p class="hint">Nøglen gemmes lokalt i din browser</p>
+                        <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
                     </div>
 
                     <div class="setup-section">
-                        <label>Vælg PDF-filer:</label>
+                        <label data-i18n="selectPdfFiles">Vælg PDF-filer:</label>
                         <input type="file" id="pdf-input" accept=".pdf" multiple class="file-input">
                         <div id="file-list" class="file-list"></div>
                     </div>
 
                     <div id="generation-status" class="generation-status"></div>
 
-                    <button id="generate-btn" class="btn btn-primary" disabled>Generer spørgsmål fra PDF'er</button>
-                    <button id="skip-btn" class="btn btn-secondary">Spring over</button>
+                    <button id="generate-btn" class="btn btn-primary" disabled data-i18n="generateQuestions">Generer spørgsmål fra PDF'er</button>
+                    <button id="skip-btn" class="btn btn-secondary" data-i18n="skip">Spring over</button>
                 </div>
             </div>
 
@@ -71,10 +85,10 @@
                 <div class="start-content">
                     <h2 id="start-quiz-name">Quiz klar!</h2>
                     <p id="question-count" class="question-count"></p>
-                    <button id="start-btn" class="btn btn-primary">Start Quiz</button>
-                    <button id="manage-btn" class="btn btn-secondary">Administrer spørgsmål</button>
-                    <button id="back-to-setup-btn" class="btn btn-secondary">Tilføj flere PDF'er</button>
-                    <button id="back-to-list-btn" class="btn btn-secondary">Tilbage til mine quizzer</button>
+                    <button id="start-btn" class="btn btn-primary" data-i18n="startQuiz">Start Quiz</button>
+                    <button id="manage-btn" class="btn btn-secondary" data-i18n="manageQuestions">Administrer spørgsmål</button>
+                    <button id="back-to-setup-btn" class="btn btn-secondary" data-i18n="addMorePdfs">Tilføj flere PDF'er</button>
+                    <button id="back-to-list-btn" class="btn btn-secondary" data-i18n="backToMyQuizzes">Tilbage til mine quizzer</button>
                 </div>
             </div>
 
@@ -82,44 +96,44 @@
                 <div class="manage-content">
                     <h2 id="manage-quiz-name">Administrer spørgsmål</h2>
                     <div class="manage-actions">
-                        <button id="add-question-btn" class="btn btn-primary">+ Tilføj spørgsmål</button>
-                        <button id="delete-all-btn" class="btn btn-danger">Slet alle</button>
+                        <button id="add-question-btn" class="btn btn-primary" data-i18n="addQuestion">+ Tilføj spørgsmål</button>
+                        <button id="delete-all-btn" class="btn btn-danger" data-i18n="deleteAll">Slet alle</button>
                     </div>
                     <div id="questions-list" class="questions-list"></div>
-                    <button id="back-from-manage-btn" class="btn btn-secondary">Tilbage</button>
+                    <button id="back-from-manage-btn" class="btn btn-secondary" data-i18n="back">Tilbage</button>
                 </div>
             </div>
 
             <div id="edit-screen" class="screen">
                 <div class="edit-content">
-                    <h2 id="edit-title">Tilføj nyt spørgsmål</h2>
+                    <h2 id="edit-title" data-i18n="addNewQuestion">Tilføj nyt spørgsmål</h2>
                     
                     <div class="form-group">
-                        <label for="edit-question">Spørgsmål:</label>
-                        <textarea id="edit-question" class="input-field" rows="3" placeholder="Skriv dit spørgsmål her..."></textarea>
+                        <label for="edit-question" data-i18n="question">Spørgsmål:</label>
+                        <textarea id="edit-question" class="input-field" rows="3" data-i18n-placeholder="questionPlaceholder" placeholder="Skriv dit spørgsmål her..."></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label>Svarmuligheder:</label>
-                        <input type="text" id="edit-option-0" class="input-field" placeholder="Svar A">
-                        <input type="text" id="edit-option-1" class="input-field" placeholder="Svar B">
-                        <input type="text" id="edit-option-2" class="input-field" placeholder="Svar C">
-                        <input type="text" id="edit-option-3" class="input-field" placeholder="Svar D">
+                        <label data-i18n="answerOptions">Svarmuligheder:</label>
+                        <input type="text" id="edit-option-0" class="input-field" data-i18n-placeholder="answerA" placeholder="Svar A">
+                        <input type="text" id="edit-option-1" class="input-field" data-i18n-placeholder="answerB" placeholder="Svar B">
+                        <input type="text" id="edit-option-2" class="input-field" data-i18n-placeholder="answerC" placeholder="Svar C">
+                        <input type="text" id="edit-option-3" class="input-field" data-i18n-placeholder="answerD" placeholder="Svar D">
                     </div>
 
                     <div class="form-group">
-                        <label for="edit-correct">Korrekt svar:</label>
+                        <label for="edit-correct" data-i18n="correctAnswer">Korrekt svar:</label>
                         <select id="edit-correct" class="input-field">
-                            <option value="0">Svar A</option>
-                            <option value="1">Svar B</option>
-                            <option value="2">Svar C</option>
-                            <option value="3">Svar D</option>
+                            <option value="0" data-i18n="answerA">Svar A</option>
+                            <option value="1" data-i18n="answerB">Svar B</option>
+                            <option value="2" data-i18n="answerC">Svar C</option>
+                            <option value="3" data-i18n="answerD">Svar D</option>
                         </select>
                     </div>
 
                     <div class="edit-actions">
-                        <button id="save-question-btn" class="btn btn-primary">Gem</button>
-                        <button id="cancel-edit-btn" class="btn btn-secondary">Annuller</button>
+                        <button id="save-question-btn" class="btn btn-primary" data-i18n="save">Gem</button>
+                        <button id="cancel-edit-btn" class="btn btn-secondary" data-i18n="cancel">Annuller</button>
                     </div>
                 </div>
             </div>
@@ -129,7 +143,7 @@
                     <div class="progress-bar">
                         <div id="progress-fill" class="progress-fill"></div>
                     </div>
-                    <span id="progress-text" class="progress-text">Spørgsmål 1 af 20</span>
+                    <span id="progress-text" class="progress-text"></span>
                 </div>
 
                 <div class="question-container">
@@ -138,13 +152,13 @@
                 </div>
 
                 <div class="navigation">
-                    <button id="next-btn" class="btn btn-primary" disabled>Næste spørgsmål</button>
+                    <button id="next-btn" class="btn btn-primary" disabled data-i18n="nextQuestion">Næste spørgsmål</button>
                 </div>
             </div>
 
             <div id="result-screen" class="screen">
                 <div class="result-content">
-                    <h2 id="result-quiz-name">Quiz Afsluttet!</h2>
+                    <h2 id="result-quiz-name"></h2>
                     <div id="score-display" class="score-display">
                         <div class="score-circle">
                             <span id="score-number">0</span>
@@ -153,14 +167,14 @@
                     </div>
                     <p id="result-message" class="result-message"></p>
                     <div id="result-summary" class="result-summary"></div>
-                    <button id="restart-btn" class="btn btn-primary">Prøv igen</button>
-                    <button id="back-to-list-from-result-btn" class="btn btn-secondary">Tilbage til mine quizzer</button>
+                    <button id="restart-btn" class="btn btn-primary" data-i18n="tryAgain">Prøv igen</button>
+                    <button id="back-to-list-from-result-btn" class="btn btn-secondary" data-i18n="backToMyQuizzes">Tilbage til mine quizzer</button>
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>Opret quizzer fra dine PDF-dokumenter</p>
+            <p data-i18n="footer">Opret quizzer fra dine PDF-dokumenter</p>
         </footer>
     </div>
 

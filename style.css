@@ -42,11 +42,40 @@ header {
     color: white;
     padding: 30px;
     text-align: center;
+    position: relative;
 }
 
 header h1 {
     font-size: 2rem;
     margin-bottom: 5px;
+}
+
+.language-select {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.language-select:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.language-select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.language-select option {
+    color: var(--text-color);
+    background: white;
 }
 
 .subtitle {
@@ -81,6 +110,19 @@ main {
     color: var(--text-color);
     margin-bottom: 20px;
     font-size: 1.5rem;
+}
+
+.list-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.import-export-actions {
+    display: flex;
+    gap: 10px;
 }
 
 .start-content {
@@ -658,10 +700,18 @@ textarea.input-field {
 @media (max-width: 500px) {
     header {
         padding: 20px;
+        padding-top: 45px;
     }
     
     header h1 {
         font-size: 1.5rem;
+    }
+
+    .language-select {
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        font-size: 0.8rem;
     }
     
     main {

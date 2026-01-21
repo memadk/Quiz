@@ -47,32 +47,33 @@ class OpenAIService {
     }
 
     async generateQuestions(text, numQuestions = 10, pdfInfo = null) {
-        const prompt = `Du er en ekspert i at lave quizspørgsmål på dansk. Baseret på følgende tekst, generer ${numQuestions} multiple choice spørgsmål.
+        const lang = i18n.t('promptLanguage');
+        const prompt = `You are an expert at creating quiz questions in ${lang}. Based on the following text, generate ${numQuestions} multiple choice questions.
 
-TEKST:
+TEXT:
 ${text.substring(0, 8000)}
 
-REGLER:
-1. Hvert spørgsmål skal have præcis 4 svarmuligheder
-2. Kun ét svar må være korrekt
-3. Svarmulighederne skal være plausible
-4. Spørgsmålene skal teste forståelse, ikke bare hukommelse
-5. Svar på dansk
-6. For hvert spørgsmål, angiv hvilken side (kig efter [Side X] markører) svaret kan findes på
-7. Inkluder et kort uddrag (1-2 sætninger) fra teksten som forklarer det korrekte svar
+RULES:
+1. Each question must have exactly 4 answer options
+2. Only one answer may be correct
+3. The answer options should be plausible
+4. The questions should test understanding, not just memorization
+5. Answer in ${lang}
+6. For each question, indicate which page (look for [Side X] or [Page X] markers) the answer can be found on
+7. Include a short excerpt (1-2 sentences) from the text that explains the correct answer
 
-Returner KUN et JSON array med dette format (ingen anden tekst):
+Return ONLY a JSON array with this format (no other text):
 [
   {
-    "question": "Spørgsmålet her?",
-    "options": ["Svar A", "Svar B", "Svar C", "Svar D"],
+    "question": "The question here?",
+    "options": ["Answer A", "Answer B", "Answer C", "Answer D"],
     "correct": 0,
     "sourcePage": 1,
-    "sourceExcerpt": "Det relevante uddrag fra teksten der forklarer svaret..."
+    "sourceExcerpt": "The relevant excerpt from the text that explains the answer..."
   }
 ]
 
-Hvor "correct" er index (0-3) for det korrekte svar, "sourcePage" er sidenummeret hvor svaret findes, og "sourceExcerpt" er et kort uddrag der forklarer svaret.`;
+Where "correct" is the index (0-3) of the correct answer, "sourcePage" is the page number where the answer is found, and "sourceExcerpt" is a short excerpt explaining the answer.`;
 
         this.currentPdfInfo = pdfInfo;
 
@@ -216,6 +217,100 @@ class QuizManager {
         }
     }
 
+    exportQuiz(quizId) {
+        const quiz = this.getQuiz(quizId);
+        if (!quiz) return null;
+        
+        const exportData = {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            quiz: {
+                name: quiz.name,
+                description: quiz.description,
+                questions: quiz.questions.map(q => ({
+                    question: q.question,
+                    options: q.options,
+                    correct: q.correct,
+                    sourceFile: q.sourceFile || null,
+                    sourcePage: q.sourcePage || null,
+                    sourceExcerpt: q.sourceExcerpt || null
+                }))
+            }
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+
+    exportAllQuizzes() {
+        const exportData = {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            quizzes: this.quizzes.map(quiz => ({
+                name: quiz.name,
+                description: quiz.description,
+                questions: quiz.questions.map(q => ({
+                    question: q.question,
+                    options: q.options,
+                    correct: q.correct,
+                    sourceFile: q.sourceFile || null,
+                    sourcePage: q.sourcePage || null,
+                    sourceExcerpt: q.sourceExcerpt || null
+                }))
+            }))
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+
+    importQuizzes(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            
+            if (!data.version) {
+                throw new Error('Invalid format');
+            }
+            
+            let quizzesToImport = [];
+            
+            if (data.quiz) {
+                quizzesToImport = [data.quiz];
+            } else if (data.quizzes && Array.isArray(data.quizzes)) {
+                quizzesToImport = data.quizzes;
+            } else {
+                throw new Error('Invalid format');
+            }
+            
+            let importedCount = 0;
+            
+            for (const quizData of quizzesToImport) {
+                if (!quizData.name || !Array.isArray(quizData.questions)) {
+                    continue;
+                }
+                
+                const quiz = this.createQuiz(quizData.name, quizData.description || '');
+                
+                const validQuestions = quizData.questions.filter(q => 
+                    q.question && 
+                    Array.isArray(q.options) && 
+                    q.options.length === 4 &&
+                    typeof q.correct === 'number' &&
+                    q.correct >= 0 && 
+                    q.correct <= 3
+                );
+                
+                if (validQuestions.length > 0) {
+                    this.addQuestionsToQuiz(quiz.id, validQuestions);
+                }
+                
+                importedCount++;
+            }
+            
+            return importedCount;
+        } catch (error) {
+            throw new Error('Invalid quiz file format');
+        }
+    }
+
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
@@ -248,15 +343,26 @@ class QuizApp {
         this.skipBtn = document.getElementById('skip-btn');
         this.generationStatus = document.getElementById('generation-status');
         this.questionCount = document.getElementById('question-count');
+        this.languageSelect = document.getElementById('language-select');
 
         const savedApiKey = localStorage.getItem('openai_api_key');
         if (savedApiKey) {
             this.apiKeyInput.value = savedApiKey;
         }
 
+        this.languageSelect.value = i18n.getLanguage();
+        this.languageSelect.addEventListener('change', (e) => {
+            i18n.setLanguage(e.target.value);
+            this.updateUI();
+        });
+
         document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
         document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
         document.getElementById('cancel-quiz-btn').addEventListener('click', () => this.showQuizListScreen());
+
+        document.getElementById('import-btn').addEventListener('click', () => this.triggerImport());
+        document.getElementById('export-all-btn').addEventListener('click', () => this.exportAllQuizzes());
+        document.getElementById('import-input').addEventListener('change', (e) => this.handleImport(e));
 
         this.pdfInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.generateBtn.addEventListener('click', () => this.generateQuestions());
@@ -279,7 +385,18 @@ class QuizApp {
         document.getElementById('restart-btn').addEventListener('click', () => this.goToStartScreen());
         document.getElementById('back-to-list-from-result-btn').addEventListener('click', () => this.showQuizListScreen());
         
+        this.updateUI();
         this.showQuizListScreen();
+    }
+
+    updateUI() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = i18n.t(el.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = i18n.t(el.dataset.i18nPlaceholder);
+        });
+        this.renderQuizList();
     }
 
     showQuizListScreen() {
@@ -293,7 +410,7 @@ class QuizApp {
         const quizzes = this.quizManager.getAllQuizzes();
         
         if (quizzes.length === 0) {
-            container.innerHTML = '<p class="no-items">Ingen quizzer endnu. Opret din første quiz!</p>';
+            container.innerHTML = `<p class="no-items">${i18n.t('noQuizzes')}</p>`;
             return;
         }
 
@@ -301,13 +418,14 @@ class QuizApp {
             <div class="quiz-card" data-id="${quiz.id}">
                 <div class="quiz-card-content">
                     <h3 class="quiz-card-title">${this.escapeHtml(quiz.name)}</h3>
-                    <p class="quiz-card-description">${quiz.description ? this.escapeHtml(quiz.description) : 'Ingen beskrivelse'}</p>
-                    <span class="quiz-card-count">${quiz.questions.length} spørgsmål</span>
+                    <p class="quiz-card-description">${quiz.description ? this.escapeHtml(quiz.description) : i18n.t('noDescription')}</p>
+                    <span class="quiz-card-count">${quiz.questions.length} ${i18n.t('questions')}</span>
                 </div>
                 <div class="quiz-card-actions">
-                    <button class="btn btn-primary btn-small open-quiz-btn" data-id="${quiz.id}">Åbn</button>
-                    <button class="btn-icon edit-quiz-btn" title="Rediger" data-id="${quiz.id}">✏️</button>
-                    <button class="btn-icon delete-quiz-btn" title="Slet" data-id="${quiz.id}">🗑️</button>
+                    <button class="btn btn-primary btn-small open-quiz-btn" data-id="${quiz.id}">${i18n.t('open')}</button>
+                    <button class="btn-icon export-quiz-btn" title="${i18n.t('export')}" data-id="${quiz.id}">📤</button>
+                    <button class="btn-icon edit-quiz-btn" title="${i18n.t('edit')}" data-id="${quiz.id}">✏️</button>
+                    <button class="btn-icon delete-quiz-btn" title="${i18n.t('delete')}" data-id="${quiz.id}">🗑️</button>
                 </div>
             </div>
         `).join('');
@@ -316,6 +434,13 @@ class QuizApp {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openQuiz(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.export-quiz-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.exportQuiz(btn.dataset.id);
             });
         });
 
@@ -342,7 +467,7 @@ class QuizApp {
 
     showCreateQuizForm() {
         this.editingQuizId = null;
-        document.getElementById('edit-quiz-title').textContent = 'Opret ny quiz';
+        document.getElementById('edit-quiz-title').textContent = i18n.t('createNewQuiz');
         document.getElementById('quiz-name').value = '';
         document.getElementById('quiz-description').value = '';
         this.showScreen(this.editQuizScreen);
@@ -353,7 +478,7 @@ class QuizApp {
         if (!quiz) return;
 
         this.editingQuizId = quizId;
-        document.getElementById('edit-quiz-title').textContent = 'Rediger quiz';
+        document.getElementById('edit-quiz-title').textContent = i18n.t('editQuiz');
         document.getElementById('quiz-name').value = quiz.name;
         document.getElementById('quiz-description').value = quiz.description || '';
         this.showScreen(this.editQuizScreen);
@@ -364,7 +489,7 @@ class QuizApp {
         const description = document.getElementById('quiz-description').value.trim();
 
         if (!name) {
-            alert('Indtast venligst et navn til quizzen');
+            alert(i18n.t('enterQuizName'));
             return;
         }
 
@@ -385,7 +510,7 @@ class QuizApp {
 
     deleteQuiz(quizId) {
         const quiz = this.quizManager.getQuiz(quizId);
-        if (quiz && confirm(`Er du sikker på, at du vil slette "${quiz.name}"? Dette kan ikke fortrydes.`)) {
+        if (quiz && confirm(i18n.t('confirmDeleteQuiz', { name: quiz.name }))) {
             this.quizManager.deleteQuiz(quizId);
             this.renderQuizList();
         }
@@ -419,7 +544,7 @@ class QuizApp {
     updateSkipButton() {
         const quiz = this.quizManager.getQuiz(this.currentQuizId);
         const hasQuestions = quiz && quiz.questions.length > 0;
-        this.skipBtn.textContent = hasQuestions ? 'Fortsæt til quiz' : 'Spring over';
+        this.skipBtn.textContent = hasQuestions ? i18n.t('continueToQuiz') : i18n.t('skip');
     }
 
     showStatus(message, type) {
@@ -443,7 +568,7 @@ class QuizApp {
         for (let i = 0; i < this.selectedFiles.length; i++) {
             const file = this.selectedFiles[i];
             this.showStatus(
-                `<span class="spinner"></span>Behandler ${file.name} (${i + 1}/${this.selectedFiles.length})...`,
+                `<span class="spinner"></span>${i18n.t('processing', { file: file.name, current: i + 1, total: this.selectedFiles.length })}`,
                 'loading'
             );
             
@@ -453,12 +578,12 @@ class QuizApp {
                 allNewQuestions = allNewQuestions.concat(questions);
                 
                 this.showStatus(
-                    `✓ ${file.name}: ${questions.length} spørgsmål genereret`,
+                    i18n.t('questionsGenerated', { file: file.name, count: questions.length }),
                     'success'
                 );
             } catch (error) {
                 this.showStatus(
-                    `✗ Fejl ved ${file.name}: ${error.message}`,
+                    i18n.t('errorProcessing', { file: file.name, error: error.message }),
                     'error'
                 );
                 this.generateBtn.disabled = false;
@@ -470,7 +595,7 @@ class QuizApp {
         const quiz = this.quizManager.getQuiz(this.currentQuizId);
         
         this.showStatus(
-            `✓ Færdig! ${addedCount} nye spørgsmål tilføjet. Total: ${quiz.questions.length} spørgsmål.`,
+            i18n.t('done', { added: addedCount, total: quiz.questions.length }),
             'success'
         );
         
@@ -497,11 +622,11 @@ class QuizApp {
         const startBtn = document.getElementById('start-btn');
         
         if (count === 0) {
-            this.questionCount.textContent = 'Ingen spørgsmål endnu. Upload PDF-filer for at generere spørgsmål.';
+            this.questionCount.textContent = i18n.t('noQuestionsUpload');
             startBtn.disabled = true;
         } else {
             const quizSize = Math.min(count, 20);
-            this.questionCount.textContent = `${count} spørgsmål tilgængelige (${quizSize} tilfældige vælges)`;
+            this.questionCount.textContent = i18n.t('questionsAvailable', { count: count, selected: quizSize });
             startBtn.disabled = false;
         }
         
@@ -527,7 +652,7 @@ class QuizApp {
         const quiz = this.quizManager.getQuiz(this.currentQuizId);
         
         if (!quiz || quiz.questions.length === 0) {
-            container.innerHTML = '<p class="no-items">Ingen spørgsmål endnu. Tilføj spørgsmål manuelt eller generer fra PDF.</p>';
+            container.innerHTML = `<p class="no-items">${i18n.t('noQuestionsYet')}</p>`;
             return;
         }
 
@@ -571,7 +696,7 @@ class QuizApp {
 
     showAddQuestionForm() {
         this.editingQuestionId = null;
-        document.getElementById('edit-title').textContent = 'Tilføj nyt spørgsmål';
+        document.getElementById('edit-title').textContent = i18n.t('addNewQuestion');
         document.getElementById('edit-question').value = '';
         document.getElementById('edit-option-0').value = '';
         document.getElementById('edit-option-1').value = '';
@@ -589,7 +714,7 @@ class QuizApp {
         if (!question) return;
 
         this.editingQuestionId = questionId;
-        document.getElementById('edit-title').textContent = 'Rediger spørgsmål';
+        document.getElementById('edit-title').textContent = i18n.t('editQuestion');
         document.getElementById('edit-question').value = question.question;
         document.getElementById('edit-option-0').value = question.options[0];
         document.getElementById('edit-option-1').value = question.options[1];
@@ -612,11 +737,11 @@ class QuizApp {
         };
 
         if (!question.question) {
-            alert('Indtast venligst et spørgsmål');
+            alert(i18n.t('enterQuestion'));
             return;
         }
         if (question.options.some(opt => !opt)) {
-            alert('Alle svarmuligheder skal udfyldes');
+            alert(i18n.t('fillAllOptions'));
             return;
         }
 
@@ -630,14 +755,14 @@ class QuizApp {
     }
 
     deleteQuestion(questionId) {
-        if (confirm('Er du sikker på, at du vil slette dette spørgsmål?')) {
+        if (confirm(i18n.t('confirmDeleteQuestion'))) {
             this.quizManager.deleteQuestion(this.currentQuizId, questionId);
             this.renderQuestionList();
         }
     }
 
     deleteAllQuestions() {
-        if (confirm('Er du sikker på, at du vil slette ALLE spørgsmål? Dette kan ikke fortrydes.')) {
+        if (confirm(i18n.t('confirmDeleteAll'))) {
             this.quizManager.deleteAllQuestions(this.currentQuizId);
             this.renderQuestionList();
         }
@@ -655,7 +780,7 @@ class QuizApp {
     startQuiz() {
         const quiz = this.quizManager.getQuiz(this.currentQuizId);
         if (!quiz || quiz.questions.length === 0) {
-            alert('Du skal have mindst ét spørgsmål for at starte quizzen.');
+            alert(i18n.t('needOneQuestion'));
             return;
         }
 
@@ -682,7 +807,7 @@ class QuizApp {
         
         const progress = (this.currentIndex / this.quizQuestions.length) * 100;
         progressFill.style.width = `${progress}%`;
-        progressText.textContent = `Spørgsmål ${this.currentIndex + 1} af ${this.quizQuestions.length}`;
+        progressText.textContent = i18n.t('questionOf', { current: this.currentIndex + 1, total: this.quizQuestions.length });
 
         optionsContainer.innerHTML = '';
         question.options.forEach((option, index) => {
@@ -758,15 +883,15 @@ class QuizApp {
         let message = '';
         
         if (percentage === 100) {
-            message = 'Perfekt! Du har svaret rigtigt på alle spørgsmål!';
+            message = i18n.t('resultPerfect');
         } else if (percentage >= 80) {
-            message = 'Fantastisk! Du har styr på det meste!';
+            message = i18n.t('resultGreat');
         } else if (percentage >= 60) {
-            message = 'Godt klaret! Du har en god forståelse.';
+            message = i18n.t('resultGood');
         } else if (percentage >= 40) {
-            message = 'Ikke dårligt, men der er plads til forbedring.';
+            message = i18n.t('resultOk');
         } else {
-            message = 'Prøv at gennemgå materialet igen og tag quizzen en gang til!';
+            message = i18n.t('resultTryAgain');
         }
         
         resultMessage.textContent = message;
@@ -774,8 +899,8 @@ class QuizApp {
         resultSummary.innerHTML = this.answers.map((answer, index) => {
             let sourceHtml = '';
             if (!answer.isCorrect && (answer.sourceFile || answer.sourceExcerpt)) {
-                const filePart = answer.sourceFile ? `<strong>Kilde:</strong> ${this.escapeHtml(answer.sourceFile)}` : '';
-                const pagePart = answer.sourcePage ? `, side ${answer.sourcePage}` : '';
+                const filePart = answer.sourceFile ? `<strong>${i18n.t('source')}</strong> ${this.escapeHtml(answer.sourceFile)}` : '';
+                const pagePart = answer.sourcePage ? `, ${i18n.t('page')} ${answer.sourcePage}` : '';
                 const excerptPart = answer.sourceExcerpt ? `<div class="source-excerpt">"${this.escapeHtml(answer.sourceExcerpt)}"</div>` : '';
                 sourceHtml = `<div class="source-reference">${filePart}${pagePart}${excerptPart}</div>`;
             }
@@ -783,12 +908,72 @@ class QuizApp {
             return `
                 <div class="summary-item ${answer.isCorrect ? 'correct-answer' : 'wrong-answer'}">
                     <strong>${index + 1}. ${this.escapeHtml(answer.question)}</strong><br>
-                    Dit svar: ${this.escapeHtml(answer.userAnswer)}
-                    ${!answer.isCorrect ? `<br>Korrekt svar: ${this.escapeHtml(answer.correctAnswer)}` : ''}
+                    ${i18n.t('yourAnswer')} ${this.escapeHtml(answer.userAnswer)}
+                    ${!answer.isCorrect ? `<br>${i18n.t('correctAnswerWas')} ${this.escapeHtml(answer.correctAnswer)}` : ''}
                     ${sourceHtml}
                 </div>
             `;
         }).join('');
+    }
+
+    exportQuiz(quizId) {
+        const quiz = this.quizManager.getQuiz(quizId);
+        if (!quiz) return;
+        
+        const jsonData = this.quizManager.exportQuiz(quizId);
+        if (!jsonData) return;
+        
+        this.downloadFile(jsonData, `${this.sanitizeFilename(quiz.name)}.json`);
+    }
+
+    exportAllQuizzes() {
+        const quizzes = this.quizManager.getAllQuizzes();
+        if (quizzes.length === 0) {
+            alert(i18n.t('noQuizzesToExport'));
+            return;
+        }
+        
+        const jsonData = this.quizManager.exportAllQuizzes();
+        this.downloadFile(jsonData, 'all-quizzes.json');
+    }
+
+    downloadFile(content, filename) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    sanitizeFilename(name) {
+        return name.replace(/[^a-z0-9æøåäöü\-_\s]/gi, '').replace(/\s+/g, '-').toLowerCase();
+    }
+
+    triggerImport() {
+        document.getElementById('import-input').click();
+    }
+
+    handleImport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const count = this.quizManager.importQuizzes(event.target.result);
+                alert(i18n.t('importSuccess', { count }));
+                this.renderQuizList();
+            } catch (error) {
+                alert(i18n.t('importError'));
+            }
+        };
+        reader.readAsText(file);
+        
+        e.target.value = '';
     }
 }
 
