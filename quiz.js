@@ -46,21 +46,53 @@ class OpenAIService {
         this.baseUrl = 'https://api.openai.com/v1/chat/completions';
     }
 
-    async generateQuestions(text, numQuestions = 10, pdfInfo = null) {
+    async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
         const lang = i18n.t('promptLanguage');
-        const prompt = `You are an expert at creating quiz questions in ${lang}. Based on the following text, generate ${numQuestions} multiple choice questions.
+        
+        const difficultyInstructions = {
+            easy: `DIFFICULTY: Easy
+- Focus on basic facts and definitions
+- Questions should be answerable by someone who read the text once
+- Distractors (wrong answers) should be clearly distinguishable from the correct answer
+- Prioritize "What is...?" and "Which...?" style questions`,
+            medium: `DIFFICULTY: Medium
+- Mix of factual recall and understanding questions
+- Include some "Why...?" and "How...?" questions that require connecting concepts
+- Distractors should be plausible but distinguishable with good understanding
+- Balance between terminology and conceptual understanding`,
+            hard: `DIFFICULTY: Hard
+- Focus on deep understanding and application
+- Include "What would happen if...?" and "How does X relate to Y?" questions
+- Require connecting multiple concepts from the text
+- Distractors should be sophisticated and require careful thinking to eliminate
+- Test ability to apply knowledge to new situations`
+        };
+
+        const prompt = `You are an expert at creating educational quiz questions in ${lang}. Based on the following text, generate ${numQuestions} high-quality multiple choice questions.
+
+${difficultyInstructions[difficulty] || difficultyInstructions.medium}
 
 TEXT:
 ${text.substring(0, 8000)}
 
-RULES:
-1. Each question must have exactly 4 answer options
-2. Only one answer may be correct
-3. The answer options should be plausible
-4. The questions should test understanding, not just memorization
-5. Answer in ${lang}
-6. For each question, indicate which page (look for [Side X] or [Page X] markers) the answer can be found on
-7. Include a short excerpt (1-2 sentences) from the text that explains the correct answer
+CRITICAL RULES - Questions MUST focus on the SUBJECT MATTER:
+1. ONLY create questions about the actual educational content (concepts, facts, processes, definitions)
+2. NEVER create questions about:
+   - Document structure (figures, tables, chapters, sections, page numbers)
+   - Metadata (copyright, publication dates, authors, publishers, URLs)
+   - UI elements (buttons, links, navigation, "fokustilstand", comments sections)
+   - References to "the text" itself ("What does the text say about...?")
+   - Visual elements that cannot be seen (figures, images, diagrams)
+3. Questions should stand alone - a student should be able to answer without having the PDF
+
+QUESTION FORMAT RULES:
+4. Each question must have exactly 4 answer options
+5. Only one answer may be correct
+6. All distractors (wrong answers) must be plausible within the subject domain
+7. Vary question types: factual ("What is...?"), conceptual ("Why does...?"), and application ("If X happens, what...?")
+8. Answer in ${lang}
+9. For each question, indicate the page number (look for [Side X] or [Page X] markers)
+10. Include a short excerpt (1-2 sentences) from the text that supports the correct answer
 
 Return ONLY a JSON array with this format (no other text):
 [
@@ -73,7 +105,7 @@ Return ONLY a JSON array with this format (no other text):
   }
 ]
 
-Where "correct" is the index (0-3) of the correct answer, "sourcePage" is the page number where the answer is found, and "sourceExcerpt" is a short excerpt explaining the answer.`;
+Where "correct" is the index (0-3) of the correct answer.`;
 
         this.currentPdfInfo = pdfInfo;
 
@@ -344,6 +376,7 @@ class QuizApp {
         this.generationStatus = document.getElementById('generation-status');
         this.questionCount = document.getElementById('question-count');
         this.languageSelect = document.getElementById('language-select');
+        this.difficultySelect = document.getElementById('difficulty-select');
 
         const savedApiKey = localStorage.getItem('openai_api_key');
         if (savedApiKey) {
@@ -574,7 +607,8 @@ class QuizApp {
             
             try {
                 const pdfInfo = await PDFReader.extractTextWithPages(file);
-                const questions = await openai.generateQuestions(pdfInfo.fullText, 10, pdfInfo);
+                const difficulty = this.difficultySelect.value;
+                const questions = await openai.generateQuestions(pdfInfo.fullText, 10, pdfInfo, difficulty);
                 allNewQuestions = allNewQuestions.concat(questions);
                 
                 this.showStatus(
