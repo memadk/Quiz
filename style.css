@@ -383,6 +383,27 @@ main {
     color: var(--error-color);
 }
 
+.source-reference {
+    margin-top: 10px;
+    padding: 12px;
+    background: #fff3cd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #856404;
+    border-left: 3px solid #ffc107;
+}
+
+.source-reference strong {
+    color: #664d03;
+}
+
+.source-excerpt {
+    margin-top: 8px;
+    font-style: italic;
+    color: #5c4a00;
+    line-height: 1.5;
+}
+
 .summary-item span {
     font-weight: 600;
 }

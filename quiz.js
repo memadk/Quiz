@@ -15,6 +15,29 @@ class PDFReader {
         
         return fullText;
     }
+
+    static async extractTextWithPages(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pages = [];
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            pages.push({
+                pageNumber: i,
+                text: pageText
+            });
+        }
+        
+        return {
+            fileName: file.name,
+            totalPages: pdf.numPages,
+            pages: pages,
+            fullText: pages.map(p => `[Side ${p.pageNumber}] ${p.text}`).join('\n\n')
+        };
+    }
 }
 
 class OpenAIService {
@@ -23,7 +46,7 @@ class OpenAIService {
         this.baseUrl = 'https://api.openai.com/v1/chat/completions';
     }
 
-    async generateQuestions(text, numQuestions = 10) {
+    async generateQuestions(text, numQuestions = 10, pdfInfo = null) {
         const prompt = `Du er en ekspert i at lave quizspørgsmål på dansk. Baseret på følgende tekst, generer ${numQuestions} multiple choice spørgsmål.
 
 TEKST:
@@ -35,17 +58,23 @@ REGLER:
 3. Svarmulighederne skal være plausible
 4. Spørgsmålene skal teste forståelse, ikke bare hukommelse
 5. Svar på dansk
+6. For hvert spørgsmål, angiv hvilken side (kig efter [Side X] markører) svaret kan findes på
+7. Inkluder et kort uddrag (1-2 sætninger) fra teksten som forklarer det korrekte svar
 
 Returner KUN et JSON array med dette format (ingen anden tekst):
 [
   {
     "question": "Spørgsmålet her?",
     "options": ["Svar A", "Svar B", "Svar C", "Svar D"],
-    "correct": 0
+    "correct": 0,
+    "sourcePage": 1,
+    "sourceExcerpt": "Det relevante uddrag fra teksten der forklarer svaret..."
   }
 ]
 
-Hvor "correct" er index (0-3) for det korrekte svar.`;
+Hvor "correct" er index (0-3) for det korrekte svar, "sourcePage" er sidenummeret hvor svaret findes, og "sourceExcerpt" er et kort uddrag der forklarer svaret.`;
+
+        this.currentPdfInfo = pdfInfo;
 
         const response = await fetch(this.baseUrl, {
             method: 'POST',
@@ -74,7 +103,15 @@ Hvor "correct" er index (0-3) for det korrekte svar.`;
             throw new Error('Kunne ikke parse AI-svar');
         }
         
-        return JSON.parse(jsonMatch[0]);
+        const questions = JSON.parse(jsonMatch[0]);
+        
+        if (pdfInfo) {
+            questions.forEach(q => {
+                q.sourceFile = pdfInfo.fileName;
+            });
+        }
+        
+        return questions;
     }
 }
 
@@ -411,8 +448,8 @@ class QuizApp {
             );
             
             try {
-                const text = await PDFReader.extractText(file);
-                const questions = await openai.generateQuestions(text, 10);
+                const pdfInfo = await PDFReader.extractTextWithPages(file);
+                const questions = await openai.generateQuestions(pdfInfo.fullText, 10, pdfInfo);
                 allNewQuestions = allNewQuestions.concat(questions);
                 
                 this.showStatus(
@@ -684,7 +721,10 @@ class QuizApp {
             question: question.question,
             userAnswer: question.options[index],
             correctAnswer: question.options[question.correct],
-            isCorrect: isCorrect
+            isCorrect: isCorrect,
+            sourceFile: question.sourceFile || null,
+            sourcePage: question.sourcePage || null,
+            sourceExcerpt: question.sourceExcerpt || null
         });
 
         nextBtn.disabled = false;
@@ -731,13 +771,24 @@ class QuizApp {
         
         resultMessage.textContent = message;
 
-        resultSummary.innerHTML = this.answers.map((answer, index) => `
-            <div class="summary-item ${answer.isCorrect ? 'correct-answer' : 'wrong-answer'}">
-                <strong>${index + 1}. ${answer.question}</strong><br>
-                Dit svar: ${answer.userAnswer}
-                ${!answer.isCorrect ? `<br>Korrekt svar: ${answer.correctAnswer}` : ''}
-            </div>
-        `).join('');
+        resultSummary.innerHTML = this.answers.map((answer, index) => {
+            let sourceHtml = '';
+            if (!answer.isCorrect && (answer.sourceFile || answer.sourceExcerpt)) {
+                const filePart = answer.sourceFile ? `<strong>Kilde:</strong> ${this.escapeHtml(answer.sourceFile)}` : '';
+                const pagePart = answer.sourcePage ? `, side ${answer.sourcePage}` : '';
+                const excerptPart = answer.sourceExcerpt ? `<div class="source-excerpt">"${this.escapeHtml(answer.sourceExcerpt)}"</div>` : '';
+                sourceHtml = `<div class="source-reference">${filePart}${pagePart}${excerptPart}</div>`;
+            }
+            
+            return `
+                <div class="summary-item ${answer.isCorrect ? 'correct-answer' : 'wrong-answer'}">
+                    <strong>${index + 1}. ${this.escapeHtml(answer.question)}</strong><br>
+                    Dit svar: ${this.escapeHtml(answer.userAnswer)}
+                    ${!answer.isCorrect ? `<br>Korrekt svar: ${this.escapeHtml(answer.correctAnswer)}` : ''}
+                    ${sourceHtml}
+                </div>
+            `;
+        }).join('');
     }
 }
 
