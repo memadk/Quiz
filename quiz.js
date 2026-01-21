@@ -492,6 +492,8 @@ class QuizApp {
         document.addEventListener('click', (e) => this.closeDropdownOnClickOutside(e));
 
         document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+        
+        this.initSwipeGestures();
 
         document.getElementById('create-quiz-btn').addEventListener('click', () => this.showCreateQuizForm());
         document.getElementById('save-quiz-btn').addEventListener('click', () => this.saveQuiz());
@@ -929,6 +931,41 @@ class QuizApp {
                 document.getElementById('back-to-list-from-result-btn').click();
                 e.preventDefault();
             }
+        }
+    }
+
+    initSwipeGestures() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        const minSwipeDistance = 50;
+        const maxVerticalDistance = 100;
+
+        this.questionScreen.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        this.questionScreen.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance, maxVerticalDistance);
+        }, { passive: true });
+    }
+
+    handleSwipe(startX, startY, endX, endY, minDistance, maxVertical) {
+        const deltaX = endX - startX;
+        const deltaY = Math.abs(endY - startY);
+
+        if (Math.abs(deltaX) < minDistance || deltaY > maxVertical) {
+            return;
+        }
+
+        const nextBtn = document.getElementById('next-btn');
+        
+        if (deltaX < 0 && !nextBtn.disabled) {
+            nextBtn.click();
         }
     }
 
