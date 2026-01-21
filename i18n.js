@@ -97,7 +97,9 @@ const translations = {
         more: 'Mere',
         noApiKey: 'Husk at indtaste din OpenAI API-nøgle i indstillinger (⚙️)',
         timerMode: 'Timer mode',
-        timeUp: 'Tiden er udløbet!'
+        timeUp: 'Tiden er udløbet!',
+        resumeQuiz: 'Fortsæt quiz',
+        resumeProgress: 'Du har en igangværende quiz ({answered}/{total} besvaret)'
     },
     en: {
         title: 'PDF Quiz',
@@ -197,7 +199,9 @@ const translations = {
         more: 'More',
         noApiKey: 'Remember to enter your OpenAI API key in settings (⚙️)',
         timerMode: 'Timer mode',
-        timeUp: 'Time is up!'
+        timeUp: 'Time is up!',
+        resumeQuiz: 'Resume quiz',
+        resumeProgress: 'You have an ongoing quiz ({answered}/{total} answered)'
     }
 };
 

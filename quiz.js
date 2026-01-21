@@ -523,6 +523,12 @@ class QuizApp {
         document.getElementById('timer-duration').addEventListener('change', (e) => {
             this.timerDuration = parseInt(e.target.value);
         });
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            const savedProgress = this.getSavedProgress();
+            if (savedProgress) {
+                this.resumeQuiz(savedProgress);
+            }
+        });
 
         document.getElementById('add-question-btn').addEventListener('click', () => this.showAddQuestionForm());
         document.getElementById('delete-all-btn').addEventListener('click', () => this.deleteAllQuestions());
@@ -1207,6 +1213,19 @@ class QuizApp {
         document.getElementById('start-quiz-name').textContent = quiz.name;
         const count = quiz.questions.length;
         const startBtn = document.getElementById('start-btn');
+        const resumeSection = document.getElementById('resume-section');
+        const resumeText = document.getElementById('resume-text');
+        
+        const savedProgress = this.getSavedProgress();
+        if (savedProgress) {
+            resumeSection.classList.remove('hidden');
+            resumeText.textContent = i18n.t('resumeProgress', { 
+                answered: savedProgress.currentIndex, 
+                total: savedProgress.quizQuestions.length 
+            });
+        } else {
+            resumeSection.classList.add('hidden');
+        }
         
         if (count === 0) {
             this.questionCount.textContent = i18n.t('noQuestionsUpload');
@@ -1403,6 +1422,7 @@ class QuizApp {
         this.score = 0;
         this.answers = [];
         this.clearTimer();
+        this.clearSavedProgress();
         
         const timerDisplay = document.getElementById('timer-display');
         if (this.timerEnabled) {
@@ -1415,6 +1435,62 @@ class QuizApp {
         
         this.showScreen(this.questionScreen);
         this.displayQuestion();
+    }
+
+    resumeQuiz(savedProgress) {
+        this.quizQuestions = savedProgress.quizQuestions;
+        this.currentIndex = savedProgress.currentIndex;
+        this.score = savedProgress.score;
+        this.answers = savedProgress.answers;
+        this.timerEnabled = savedProgress.timerEnabled;
+        this.timerDuration = savedProgress.timerDuration;
+        this.clearTimer();
+        
+        const timerDisplay = document.getElementById('timer-display');
+        if (this.timerEnabled) {
+            timerDisplay.classList.remove('hidden');
+        } else {
+            timerDisplay.classList.add('hidden');
+        }
+        
+        document.querySelector('.score-total').textContent = `/ ${this.quizQuestions.length}`;
+        
+        this.showScreen(this.questionScreen);
+        this.displayQuestion();
+    }
+
+    saveProgress() {
+        const progress = {
+            quizId: this.currentQuizId,
+            quizQuestions: this.quizQuestions,
+            currentIndex: this.currentIndex,
+            score: this.score,
+            answers: this.answers,
+            timerEnabled: this.timerEnabled,
+            timerDuration: this.timerDuration,
+            savedAt: Date.now()
+        };
+        localStorage.setItem('quiz_progress', JSON.stringify(progress));
+    }
+
+    getSavedProgress() {
+        const saved = localStorage.getItem('quiz_progress');
+        if (!saved) return null;
+        
+        try {
+            const progress = JSON.parse(saved);
+            if (progress.quizId === this.currentQuizId && 
+                progress.currentIndex < progress.quizQuestions.length) {
+                return progress;
+            }
+        } catch (e) {
+            this.clearSavedProgress();
+        }
+        return null;
+    }
+
+    clearSavedProgress() {
+        localStorage.removeItem('quiz_progress');
     }
 
     shuffleArray(array) {
@@ -1502,6 +1578,7 @@ class QuizApp {
     nextQuestion() {
         this.clearTimer();
         this.currentIndex++;
+        this.saveProgress();
         
         if (this.currentIndex < this.quizQuestions.length) {
             this.displayQuestion();
@@ -1511,6 +1588,7 @@ class QuizApp {
     }
 
     showResults() {
+        this.clearSavedProgress();
         this.showScreen(this.resultScreen);
         
         const quiz = this.quizManager.getQuiz(this.currentQuizId);
