@@ -1149,6 +1149,7 @@ class QuizApp {
         
         if (percentage === 100) {
             message = i18n.t('resultPerfect');
+            this.launchConfetti();
         } else if (percentage >= 80) {
             message = i18n.t('resultGreat');
         } else if (percentage >= 60) {
@@ -1216,6 +1217,37 @@ class QuizApp {
 
     sanitizeFilename(name) {
         return name.replace(/[^a-z0-9æøåäöü\-_\s]/gi, '').replace(/\s+/g, '-').toLowerCase();
+    }
+
+    launchConfetti() {
+        const container = document.getElementById('confetti-container');
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe'];
+        const confettiCount = 150;
+
+        container.innerHTML = '';
+
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.top = -10 + 'px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+            
+            const size = 5 + Math.random() * 10;
+            confetti.style.width = size + 'px';
+            confetti.style.height = size + 'px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            
+            container.appendChild(confetti);
+            
+            setTimeout(() => confetti.classList.add('active'), 10);
+        }
+
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
     }
 
     triggerImport() {
