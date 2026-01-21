@@ -1269,11 +1269,35 @@ class QuizApp {
         const scoreNumber = document.getElementById('score-number');
         const resultMessage = document.getElementById('result-message');
         const resultSummary = document.getElementById('result-summary');
+        const scoreCircle = document.querySelector('.score-circle');
+        const progressRing = document.querySelector('.progress-ring__circle');
 
         progressFill.style.width = '100%';
         scoreNumber.textContent = this.score;
+        document.querySelector('.score-total').textContent = `/ ${this.quizQuestions.length}`;
         
         const percentage = (this.score / this.quizQuestions.length) * 100;
+        
+        const radius = progressRing.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        
+        progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressRing.style.strokeDashoffset = circumference;
+        
+        progressRing.getBoundingClientRect();
+        
+        const offset = circumference - (percentage / 100) * circumference;
+        progressRing.style.strokeDashoffset = offset;
+        
+        scoreCircle.classList.remove('score-low', 'score-medium', 'score-high');
+        if (percentage < 40) {
+            scoreCircle.classList.add('score-low');
+        } else if (percentage < 60) {
+            scoreCircle.classList.add('score-medium');
+        } else {
+            scoreCircle.classList.add('score-high');
+        }
+        
         let message = '';
         
         if (percentage === 100) {

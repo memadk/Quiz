@@ -202,8 +202,14 @@
                     <h2 id="result-quiz-name"></h2>
                     <div id="score-display" class="score-display">
                         <div class="score-circle">
-                            <span id="score-number">0</span>
-                            <span class="score-total">/ 20</span>
+                            <svg class="progress-ring" width="160" height="160">
+                                <circle class="progress-ring__background" stroke-width="12" fill="transparent" r="70" cx="80" cy="80"/>
+                                <circle class="progress-ring__circle" stroke-width="12" fill="transparent" r="70" cx="80" cy="80"/>
+                            </svg>
+                            <div class="score-text">
+                                <span id="score-number">0</span>
+                                <span class="score-total">/ 20</span>
+                            </div>
                         </div>
                     </div>
                     <p id="result-message" class="result-message"></p>
