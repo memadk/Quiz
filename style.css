@@ -295,6 +295,147 @@ footer {
     font-size: 0.9rem;
 }
 
+.setup-content {
+    text-align: center;
+}
+
+.setup-content h2 {
+    color: var(--text-color);
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+}
+
+.setup-section {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.setup-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--bg-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 6px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed var(--primary-color);
+    border-radius: 8px;
+    background: var(--bg-color);
+    cursor: pointer;
+}
+
+.file-input:hover {
+    background: #e8f0fe;
+}
+
+.file-list {
+    margin-top: 12px;
+    text-align: left;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.file-item::before {
+    content: "📄";
+    margin-right: 8px;
+}
+
+.generation-status {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+    display: none;
+}
+
+.generation-status.active {
+    display: block;
+}
+
+.generation-status.loading {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
+.generation-status.success {
+    background: #d4edda;
+    border: 1px solid var(--success-color);
+    color: #155724;
+}
+
+.generation-status.error {
+    background: #f8d7da;
+    border: 1px solid var(--error-color);
+    color: #721c24;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    margin-left: 10px;
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.question-count {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 20px;
+}
+
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 @media (max-width: 500px) {
     header {
         padding: 20px;

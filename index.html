@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biologi Quiz - Kost og Sundhed</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -14,8 +15,30 @@
         </header>
 
         <main id="quiz-container">
-            <!-- Start screen -->
-            <div id="start-screen" class="screen active">
+            <div id="setup-screen" class="screen active">
+                <div class="setup-content">
+                    <h2>Opsætning</h2>
+                    
+                    <div class="setup-section">
+                        <label for="api-key">OpenAI API-nøgle:</label>
+                        <input type="password" id="api-key" placeholder="sk-..." class="input-field">
+                        <p class="hint">Nøglen gemmes lokalt i din browser</p>
+                    </div>
+
+                    <div class="setup-section">
+                        <label>Vælg PDF-filer fra Text-mappen:</label>
+                        <input type="file" id="pdf-input" accept=".pdf" multiple class="file-input">
+                        <div id="file-list" class="file-list"></div>
+                    </div>
+
+                    <div id="generation-status" class="generation-status"></div>
+
+                    <button id="generate-btn" class="btn btn-primary" disabled>Generer spørgsmål fra PDF'er</button>
+                    <button id="skip-btn" class="btn btn-secondary">Brug eksisterende spørgsmål</button>
+                </div>
+            </div>
+
+            <div id="start-screen" class="screen">
                 <div class="start-content">
                     <h2>Test din viden om kost og sundhed!</h2>
                     <p>Denne quiz indeholder spørgsmål om:</p>
@@ -26,11 +49,12 @@
                         <li>Mineraler og vitaminer</li>
                         <li>Vand</li>
                     </ul>
+                    <p id="question-count" class="question-count"></p>
                     <button id="start-btn" class="btn btn-primary">Start Quiz</button>
+                    <button id="back-to-setup-btn" class="btn btn-secondary">Tilføj flere PDF'er</button>
                 </div>
             </div>
 
-            <!-- Question screen -->
             <div id="question-screen" class="screen">
                 <div class="progress-container">
                     <div class="progress-bar">
@@ -49,7 +73,6 @@
                 </div>
             </div>
 
-            <!-- Result screen -->
             <div id="result-screen" class="screen">
                 <div class="result-content">
                     <h2>Quiz Afsluttet!</h2>
