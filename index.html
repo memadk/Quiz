@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biologi Quiz - Kost og Sundhed</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Biologi Quiz</h1>
+            <p class="subtitle">Kost og Sundhed - Biologi i udvikling</p>
+        </header>
+
+        <main id="quiz-container">
+            <!-- Start screen -->
+            <div id="start-screen" class="screen active">
+                <div class="start-content">
+                    <h2>Test din viden om kost og sundhed!</h2>
+                    <p>Denne quiz indeholder spørgsmål om:</p>
+                    <ul class="topic-list">
+                        <li>Kulhydrater</li>
+                        <li>Proteiner</li>
+                        <li>Fedtstoffer</li>
+                        <li>Mineraler og vitaminer</li>
+                        <li>Vand</li>
+                    </ul>
+                    <button id="start-btn" class="btn btn-primary">Start Quiz</button>
+                </div>
+            </div>
+
+            <!-- Question screen -->
+            <div id="question-screen" class="screen">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <span id="progress-text" class="progress-text">Spørgsmål 1 af 20</span>
+                </div>
+
+                <div class="question-container">
+                    <h2 id="question-text" class="question-text"></h2>
+                    <div id="options-container" class="options-container"></div>
+                </div>
+
+                <div class="navigation">
+                    <button id="next-btn" class="btn btn-primary" disabled>Næste spørgsmål</button>
+                </div>
+            </div>
+
+            <!-- Result screen -->
+            <div id="result-screen" class="screen">
+                <div class="result-content">
+                    <h2>Quiz Afsluttet!</h2>
+                    <div id="score-display" class="score-display">
+                        <div class="score-circle">
+                            <span id="score-number">0</span>
+                            <span class="score-total">/ 20</span>
+                        </div>
+                    </div>
+                    <p id="result-message" class="result-message"></p>
+                    <div id="result-summary" class="result-summary"></div>
+                    <button id="restart-btn" class="btn btn-primary">Prøv igen</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Baseret på kapitler fra "Biologi i udvikling"</p>
+        </footer>
+    </div>
+
+    <script src="quiz.js"></script>
+</body>
+</html>
