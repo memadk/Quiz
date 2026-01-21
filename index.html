@@ -58,6 +58,7 @@
                     <div class="list-actions">
                         <button id="create-quiz-btn" class="btn btn-primary" data-i18n="createQuiz">+ Opret ny quiz</button>
                         <div class="import-export-actions">
+                            <button id="stats-btn" class="btn btn-secondary btn-small" data-i18n="statistics">📊 Statistik</button>
                             <button id="import-btn" class="btn btn-secondary btn-small" data-i18n="import">Importér</button>
                             <button id="export-all-btn" class="btn btn-secondary btn-small" data-i18n="exportAll">Eksportér alle</button>
                         </div>
@@ -239,6 +240,36 @@
                     <div id="result-summary" class="result-summary"></div>
                     <button id="restart-btn" class="btn btn-primary" data-i18n="tryAgain">Prøv igen</button>
                     <button id="back-to-list-from-result-btn" class="btn btn-secondary" data-i18n="backToMyQuizzes">Tilbage til mine quizzer</button>
+                </div>
+            </div>
+
+            <div id="stats-screen" class="screen">
+                <div class="stats-content">
+                    <h2 data-i18n="statistics">Statistik</h2>
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-total-quizzes">0</span>
+                            <span class="stat-label" data-i18n="totalQuizzes">Quizzer taget</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-avg-score">0%</span>
+                            <span class="stat-label" data-i18n="averageScore">Gennemsnit</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-best-score">0%</span>
+                            <span class="stat-label" data-i18n="bestScore">Bedste score</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="stat-total-questions">0</span>
+                            <span class="stat-label" data-i18n="totalQuestionsAnswered">Spørgsmål besvaret</span>
+                        </div>
+                    </div>
+                    <div class="stats-history">
+                        <h3 data-i18n="recentResults">Seneste resultater</h3>
+                        <div id="stats-history-list" class="stats-history-list"></div>
+                    </div>
+                    <button id="back-from-stats-btn" class="btn btn-secondary" data-i18n="back">Tilbage</button>
+                    <button id="clear-stats-btn" class="btn btn-danger btn-small" data-i18n="clearStats">Ryd statistik</button>
                 </div>
             </div>
         </main>

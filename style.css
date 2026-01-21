@@ -1267,3 +1267,116 @@ textarea.input-field {
 .btn-success:hover {
     background: rgba(255, 255, 255, 0.9);
 }
+
+.stats-content {
+    padding: 20px;
+}
+
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.stats-history {
+    margin-bottom: 24px;
+}
+
+.stats-history h3 {
+    margin-bottom: 16px;
+    color: var(--text-color);
+}
+
+.stats-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.stats-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.stats-history-item.score-high {
+    border-left-color: var(--success-color);
+}
+
+.stats-history-item.score-medium {
+    border-left-color: #f59e0b;
+}
+
+.stats-history-item.score-low {
+    border-left-color: var(--error-color);
+}
+
+.stats-history-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stats-history-name {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.stats-history-date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.stats-history-score {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stats-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.stats-content .btn {
+    margin-right: 10px;
+}
+
+@media (max-width: 480px) {
+    .stats-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}

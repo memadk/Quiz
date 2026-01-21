@@ -466,6 +466,7 @@ class QuizApp {
         this.resultScreen = document.getElementById('result-screen');
         this.manageScreen = document.getElementById('manage-screen');
         this.editScreen = document.getElementById('edit-screen');
+        this.statsScreen = document.getElementById('stats-screen');
         this.settingsModal = document.getElementById('settings-modal');
         
         this.apiKeyInput = document.getElementById('api-key');
@@ -506,6 +507,9 @@ class QuizApp {
         document.getElementById('import-btn').addEventListener('click', () => this.triggerImport());
         document.getElementById('export-all-btn').addEventListener('click', () => this.exportAllQuizzes());
         document.getElementById('import-input').addEventListener('change', (e) => this.handleImport(e));
+        document.getElementById('stats-btn').addEventListener('click', () => this.showStatsScreen());
+        document.getElementById('back-from-stats-btn').addEventListener('click', () => this.showQuizListScreen());
+        document.getElementById('clear-stats-btn').addEventListener('click', () => this.clearStats());
 
         this.pdfInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.generateBtn.addEventListener('click', () => this.generateQuestions());
@@ -1493,6 +1497,94 @@ class QuizApp {
         localStorage.removeItem('quiz_progress');
     }
 
+    saveQuizResult() {
+        const quiz = this.quizManager.getQuiz(this.currentQuizId);
+        const result = {
+            quizId: this.currentQuizId,
+            quizName: quiz ? quiz.name : 'Quiz',
+            score: this.score,
+            total: this.quizQuestions.length,
+            percentage: Math.round((this.score / this.quizQuestions.length) * 100),
+            date: Date.now()
+        };
+        
+        const stats = this.getStats();
+        stats.results.unshift(result);
+        stats.results = stats.results.slice(0, 50);
+        localStorage.setItem('quiz_stats', JSON.stringify(stats));
+    }
+
+    getStats() {
+        const saved = localStorage.getItem('quiz_stats');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                return { results: [] };
+            }
+        }
+        return { results: [] };
+    }
+
+    showStatsScreen() {
+        const stats = this.getStats();
+        const results = stats.results;
+        
+        const totalQuizzes = results.length;
+        const totalQuestions = results.reduce((sum, r) => sum + r.total, 0);
+        const avgScore = totalQuizzes > 0 
+            ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / totalQuizzes) 
+            : 0;
+        const bestScore = totalQuizzes > 0 
+            ? Math.max(...results.map(r => r.percentage)) 
+            : 0;
+        
+        document.getElementById('stat-total-quizzes').textContent = totalQuizzes;
+        document.getElementById('stat-avg-score').textContent = `${avgScore}%`;
+        document.getElementById('stat-best-score').textContent = `${bestScore}%`;
+        document.getElementById('stat-total-questions').textContent = totalQuestions;
+        
+        const historyList = document.getElementById('stats-history-list');
+        
+        if (results.length === 0) {
+            historyList.innerHTML = `<div class="stats-empty">${i18n.t('noStats')}</div>`;
+        } else {
+            historyList.innerHTML = results.slice(0, 20).map(r => {
+                const date = new Date(r.date);
+                const dateStr = date.toLocaleDateString(i18n.getLanguage() === 'da' ? 'da-DK' : 'en-US', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                let scoreClass = 'score-high';
+                if (r.percentage < 40) scoreClass = 'score-low';
+                else if (r.percentage < 70) scoreClass = 'score-medium';
+                
+                return `
+                    <div class="stats-history-item ${scoreClass}">
+                        <div class="stats-history-info">
+                            <span class="stats-history-name">${this.escapeHtml(r.quizName)}</span>
+                            <span class="stats-history-date">${dateStr}</span>
+                        </div>
+                        <span class="stats-history-score">${r.score}/${r.total}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        this.showScreen(this.statsScreen);
+    }
+
+    clearStats() {
+        if (confirm(i18n.t('confirmClearStats'))) {
+            localStorage.removeItem('quiz_stats');
+            this.showStatsScreen();
+        }
+    }
+
     shuffleArray(array) {
         const shuffled = [...array];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -1589,6 +1681,7 @@ class QuizApp {
 
     showResults() {
         this.clearSavedProgress();
+        this.saveQuizResult();
         this.showScreen(this.resultScreen);
         
         const quiz = this.quizManager.getQuiz(this.currentQuizId);

@@ -99,7 +99,16 @@ const translations = {
         timerMode: 'Timer mode',
         timeUp: 'Tiden er udløbet!',
         resumeQuiz: 'Fortsæt quiz',
-        resumeProgress: 'Du har en igangværende quiz ({answered}/{total} besvaret)'
+        resumeProgress: 'Du har en igangværende quiz ({answered}/{total} besvaret)',
+        statistics: 'Statistik',
+        totalQuizzes: 'Quizzer taget',
+        averageScore: 'Gennemsnit',
+        bestScore: 'Bedste score',
+        totalQuestionsAnswered: 'Spørgsmål besvaret',
+        recentResults: 'Seneste resultater',
+        clearStats: 'Ryd statistik',
+        noStats: 'Ingen statistik endnu. Tag en quiz for at se dine resultater!',
+        confirmClearStats: 'Er du sikker på, at du vil slette al statistik?'
     },
     en: {
         title: 'PDF Quiz',
@@ -201,7 +210,16 @@ const translations = {
         timerMode: 'Timer mode',
         timeUp: 'Time is up!',
         resumeQuiz: 'Resume quiz',
-        resumeProgress: 'You have an ongoing quiz ({answered}/{total} answered)'
+        resumeProgress: 'You have an ongoing quiz ({answered}/{total} answered)',
+        statistics: 'Statistics',
+        totalQuizzes: 'Quizzes taken',
+        averageScore: 'Average',
+        bestScore: 'Best score',
+        totalQuestionsAnswered: 'Questions answered',
+        recentResults: 'Recent results',
+        clearStats: 'Clear stats',
+        noStats: 'No statistics yet. Take a quiz to see your results!',
+        confirmClearStats: 'Are you sure you want to delete all statistics?'
     }
 };
 
