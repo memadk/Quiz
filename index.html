@@ -36,10 +36,25 @@
                 </div>
                 <div class="modal-body">
                     <div class="setting-group">
-                        <label for="api-key" data-i18n="apiKey">OpenAI API-nøgle:</label>
-                        <input type="password" id="api-key" placeholder="sk-..." class="input-field">
+                        <label data-i18n="aiProvider">AI-udbyder:</label>
+                        <select id="ai-provider-select" class="input-field">
+                            <option value="openai" data-i18n="aiProviderOpenAI">OpenAI</option>
+                            <option value="gemini" data-i18n="aiProviderGemini">Google Gemini</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group" id="openai-settings">
+                        <label for="openai-api-key" data-i18n="openaiApiKey">OpenAI API-nøgle:</label>
+                        <input type="password" id="openai-api-key" placeholder="sk-..." class="input-field">
                         <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
                     </div>
+                    
+                    <div class="setting-group" id="gemini-settings" style="display: none;">
+                        <label for="gemini-api-key" data-i18n="geminiApiKey">Google Gemini API-nøgle:</label>
+                        <input type="password" id="gemini-api-key" placeholder="AIza..." class="input-field">
+                        <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
+                    </div>
+                    
                     <div class="setting-group">
                         <label data-i18n="language">Sprog:</label>
                         <select id="language-select" class="input-field">

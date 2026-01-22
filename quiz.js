@@ -206,6 +206,153 @@ Where "correct" is the index (0-3) of the correct answer.`;
     }
 }
 
+class GeminiService {
+    constructor(apiKey) {
+        this.apiKey = apiKey;
+        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    }
+
+    async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
+        const lang = i18n.t('promptLanguage');
+        
+        const difficultyInstructions = {
+            easy: `DIFFICULTY: Easy
+- Focus on basic facts and definitions
+- Questions should be answerable by someone who read the text once
+- Distractors (wrong answers) should be clearly distinguishable from the correct answer
+- Prioritize "What is...?" and "Which...?" style questions`,
+            medium: `DIFFICULTY: Medium
+- Mix of factual recall and understanding questions
+- Include some "Why...?" and "How...?" questions that require connecting concepts
+- Distractors should be plausible but distinguishable with good understanding
+- Balance between terminology and conceptual understanding`,
+            hard: `DIFFICULTY: Hard
+- Focus on deep understanding and application
+- Include "What would happen if...?" and "How does X relate to Y?" questions
+- Require connecting multiple concepts from the text
+- Distractors should be sophisticated and require careful thinking to eliminate
+- Test ability to apply knowledge to new situations`
+        };
+
+        const prompt = `You are an expert at creating educational quiz questions in ${lang}. Based on the following text, generate ${numQuestions} high-quality multiple choice questions.
+
+${difficultyInstructions[difficulty] || difficultyInstructions.medium}
+
+TEXT:
+${text.substring(0, 8000)}
+
+CRITICAL RULES - Questions MUST focus on the SUBJECT MATTER:
+1. ONLY create questions about the actual educational content (concepts, facts, processes, definitions)
+2. NEVER create questions about:
+   - Document structure (figures, tables, chapters, sections, page numbers)
+   - Metadata (copyright, publication dates, authors, publishers, URLs)
+   - UI elements (buttons, links, navigation, "fokustilstand", comments sections)
+   - References to "the text" itself ("What does the text say about...?")
+   - Visual elements that cannot be seen (figures, images, diagrams)
+3. Questions should stand alone - a student should be able to answer without having the PDF
+
+QUESTION FORMAT RULES:
+4. Each question must have exactly 4 answer options
+5. Only one answer may be correct
+6. All distractors (wrong answers) must be plausible within the subject domain
+7. Vary question types: factual ("What is...?"), conceptual ("Why does...?"), and application ("If X happens, what...?")
+8. Answer in ${lang}
+9. For each question, indicate the page number (look for [Side X] or [Page X] markers)
+10. Include a short excerpt (1-2 sentences) from the text that supports the correct answer
+
+Return ONLY a JSON array with this format (no other text):
+[
+  {
+    "question": "The question here?",
+    "options": ["Answer A", "Answer B", "Answer C", "Answer D"],
+    "correct": 0,
+    "sourcePage": 1,
+    "sourceExcerpt": "The relevant excerpt from the text that explains the answer..."
+  }
+]
+
+Where "correct" is the index (0-3) of the correct answer.`;
+
+        this.currentPdfInfo = pdfInfo;
+
+        const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 4000,
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Gemini API fejl');
+        }
+
+        const data = await response.json();
+        const content = data.candidates[0].content.parts[0].text;
+        
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            throw new Error('Kunne ikke parse AI-svar');
+        }
+        
+        const questions = JSON.parse(jsonMatch[0]);
+        
+        if (pdfInfo) {
+            questions.forEach(q => {
+                q.sourceFile = pdfInfo.fileName;
+            });
+        }
+        
+        return questions;
+    }
+}
+
+class AIServiceFactory {
+    static createService(provider, apiKey) {
+        switch (provider) {
+            case 'openai':
+                return new OpenAIService(apiKey);
+            case 'gemini':
+                return new GeminiService(apiKey);
+            default:
+                throw new Error(`Unknown AI provider: ${provider}`);
+        }
+    }
+
+    static getProviderKey(provider) {
+        return `${provider}_api_key`;
+    }
+
+    static getCurrentProvider() {
+        return localStorage.getItem('ai_provider') || 'openai';
+    }
+
+    static setCurrentProvider(provider) {
+        localStorage.setItem('ai_provider', provider);
+    }
+
+    static getCurrentApiKey() {
+        const provider = this.getCurrentProvider();
+        return localStorage.getItem(this.getProviderKey(provider)) || '';
+    }
+
+    static setCurrentApiKey(apiKey) {
+        const provider = this.getCurrentProvider();
+        localStorage.setItem(this.getProviderKey(provider), apiKey);
+    }
+}
+
 class QuizManager {
     constructor() {
         this.quizzes = this.loadQuizzes();
@@ -469,7 +616,6 @@ class QuizApp {
         this.statsScreen = document.getElementById('stats-screen');
         this.settingsModal = document.getElementById('settings-modal');
         
-        this.apiKeyInput = document.getElementById('api-key');
         this.pdfInput = document.getElementById('pdf-input');
         this.fileList = document.getElementById('file-list');
         this.generateBtn = document.getElementById('generate-btn');
@@ -478,11 +624,6 @@ class QuizApp {
         this.questionCount = document.getElementById('question-count');
         this.languageSelect = document.getElementById('language-select');
         this.difficultySelect = document.getElementById('difficulty-select');
-
-        const savedApiKey = localStorage.getItem('openai_api_key');
-        if (savedApiKey) {
-            this.apiKeyInput.value = savedApiKey;
-        }
 
         this.languageSelect.value = i18n.getLanguage();
         this.languageSelect.addEventListener('change', (e) => {
@@ -872,9 +1013,50 @@ class QuizApp {
             }
         });
 
-        this.apiKeyInput.addEventListener('change', () => {
-            localStorage.setItem('openai_api_key', this.apiKeyInput.value.trim());
+        // AI Provider
+        this.aiProviderSelect = document.getElementById('ai-provider-select');
+        this.openaiApiKeyInput = document.getElementById('openai-api-key');
+        this.geminiApiKeyInput = document.getElementById('gemini-api-key');
+        this.openaiSettings = document.getElementById('openai-settings');
+        this.geminiSettings = document.getElementById('gemini-settings');
+
+        // Load saved values
+        const currentProvider = AIServiceFactory.getCurrentProvider();
+        this.aiProviderSelect.value = currentProvider;
+        this.updateProviderSettings(currentProvider);
+
+        const openaiKey = localStorage.getItem('openai_api_key') || '';
+        const geminiKey = localStorage.getItem('gemini_api_key') || '';
+        this.openaiApiKeyInput.value = openaiKey;
+        this.geminiApiKeyInput.value = geminiKey;
+
+        // Event listeners
+        this.aiProviderSelect.addEventListener('change', (e) => {
+            const provider = e.target.value;
+            AIServiceFactory.setCurrentProvider(provider);
+            this.updateProviderSettings(provider);
+            this.updateGenerateButton();
         });
+
+        this.openaiApiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('openai_api_key', this.openaiApiKeyInput.value.trim());
+            this.updateGenerateButton();
+        });
+
+        this.geminiApiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('gemini_api_key', this.geminiApiKeyInput.value.trim());
+            this.updateGenerateButton();
+        });
+    }
+
+    updateProviderSettings(provider) {
+        if (provider === 'openai') {
+            this.openaiSettings.style.display = 'block';
+            this.geminiSettings.style.display = 'none';
+        } else if (provider === 'gemini') {
+            this.openaiSettings.style.display = 'none';
+            this.geminiSettings.style.display = 'block';
+        }
     }
 
     openSettings() {
@@ -1089,7 +1271,7 @@ class QuizApp {
     }
 
     updateGenerateButton() {
-        const apiKey = localStorage.getItem('openai_api_key') || '';
+        const apiKey = AIServiceFactory.getCurrentApiKey();
         const hasApiKey = apiKey.trim().length > 0;
         const hasFiles = this.selectedFiles.length > 0;
         this.generateBtn.disabled = !(hasApiKey && hasFiles);
@@ -1148,7 +1330,8 @@ class QuizApp {
     }
 
     async generateQuestions() {
-        const apiKey = localStorage.getItem('openai_api_key') || '';
+        const provider = AIServiceFactory.getCurrentProvider();
+        const apiKey = AIServiceFactory.getCurrentApiKey();
         
         if (!apiKey.trim()) {
             alert(i18n.t('noApiKey'));
@@ -1156,7 +1339,7 @@ class QuizApp {
             return;
         }
         
-        const openai = new OpenAIService(apiKey);
+        const aiService = AIServiceFactory.createService(provider, apiKey);
         let allNewQuestions = [];
         
         this.generateBtn.disabled = true;
@@ -1171,7 +1354,7 @@ class QuizApp {
             try {
                 const pdfInfo = await PDFReader.extractTextWithPages(file);
                 const difficulty = this.difficultySelect.value;
-                const questions = await openai.generateQuestions(pdfInfo.fullText, 10, pdfInfo, difficulty);
+                const questions = await aiService.generateQuestions(pdfInfo.fullText, 10, pdfInfo, difficulty);
                 allNewQuestions = allNewQuestions.concat(questions);
                 
                 this.showStatus(

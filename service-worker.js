@@ -50,8 +50,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Skip API calls (OpenAI)
-  if (url.hostname === 'api.openai.com') {
+  // Skip API calls (OpenAI and Gemini)
+  if (url.hostname === 'api.openai.com' || url.hostname === 'generativelanguage.googleapis.com') {
     return;
   }
   
