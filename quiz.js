@@ -209,7 +209,7 @@ Where "correct" is the index (0-3) of the correct answer.`;
 class GeminiService {
     constructor(apiKey) {
         this.apiKey = apiKey;
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     }
 
     async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
@@ -301,12 +301,36 @@ Where "correct" is the index (0-3) of the correct answer.`;
         const data = await response.json();
         const content = data.candidates[0].content.parts[0].text;
         
+        // Extract JSON array from the response
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
             throw new Error('Kunne ikke parse AI-svar');
         }
         
-        const questions = JSON.parse(jsonMatch[0]);
+        let questions;
+        try {
+            // Try to parse the JSON
+            questions = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+            // If parsing fails, try to clean up common issues
+            let cleanedJson = jsonMatch[0]
+                // Remove trailing commas before ] or }
+                .replace(/,(\s*[}\]])/g, '$1')
+                // Fix single quotes to double quotes (if any)
+                .replace(/'/g, '"')
+                // Remove any markdown code block markers
+                .replace(/```json\n?/g, '')
+                .replace(/```\n?/g, '');
+            
+            try {
+                questions = JSON.parse(cleanedJson);
+            } catch (secondError) {
+                console.error('Original content:', content);
+                console.error('Extracted JSON:', jsonMatch[0]);
+                console.error('Parse error:', secondError.message);
+                throw new Error(`Kunne ikke parse AI-svar: ${secondError.message}`);
+            }
+        }
         
         if (pdfInfo) {
             questions.forEach(q => {
