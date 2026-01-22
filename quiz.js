@@ -207,9 +207,32 @@ Where "correct" is the index (0-3) of the correct answer.`;
 }
 
 class GeminiService {
-    constructor(apiKey) {
+    constructor(apiKey, model = null) {
         this.apiKey = apiKey;
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+        // Use provided model or get from localStorage, default to gemini-2.5-flash
+        const selectedModel = model || localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+        this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent`;
+    }
+
+    static async listAvailableModels(apiKey) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Could not fetch models');
+        }
+        
+        const data = await response.json();
+        
+        // Filter models that support generateContent
+        const generateModels = data.models.filter(m => 
+            m.supportedGenerationMethods?.includes('generateContent')
+        ).map(m => ({
+            name: m.name.replace('models/', ''),
+            displayName: m.displayName || m.name.replace('models/', '')
+        }));
+        
+        return generateModels;
     }
 
     async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
@@ -343,12 +366,12 @@ Where "correct" is the index (0-3) of the correct answer.`;
 }
 
 class AIServiceFactory {
-    static createService(provider, apiKey) {
+    static createService(provider, apiKey, model = null) {
         switch (provider) {
             case 'openai':
                 return new OpenAIService(apiKey);
             case 'gemini':
-                return new GeminiService(apiKey);
+                return new GeminiService(apiKey, model);
             default:
                 throw new Error(`Unknown AI provider: ${provider}`);
         }
@@ -1041,6 +1064,8 @@ class QuizApp {
         this.aiProviderSelect = document.getElementById('ai-provider-select');
         this.openaiApiKeyInput = document.getElementById('openai-api-key');
         this.geminiApiKeyInput = document.getElementById('gemini-api-key');
+        this.geminiModelSelect = document.getElementById('gemini-model-select');
+        this.loadModelsBtn = document.getElementById('load-models-btn');
         this.openaiSettings = document.getElementById('openai-settings');
         this.geminiSettings = document.getElementById('gemini-settings');
 
@@ -1051,8 +1076,10 @@ class QuizApp {
 
         const openaiKey = localStorage.getItem('openai_api_key') || '';
         const geminiKey = localStorage.getItem('gemini_api_key') || '';
+        const geminiModel = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
         this.openaiApiKeyInput.value = openaiKey;
         this.geminiApiKeyInput.value = geminiKey;
+        this.geminiModelSelect.value = geminiModel;
 
         // Event listeners
         this.aiProviderSelect.addEventListener('change', (e) => {
@@ -1071,6 +1098,12 @@ class QuizApp {
             localStorage.setItem('gemini_api_key', this.geminiApiKeyInput.value.trim());
             this.updateGenerateButton();
         });
+
+        this.geminiModelSelect.addEventListener('change', () => {
+            localStorage.setItem('gemini_model', this.geminiModelSelect.value);
+        });
+
+        this.loadModelsBtn.addEventListener('click', () => this.loadGeminiModels());
     }
 
     updateProviderSettings(provider) {
@@ -1080,6 +1113,54 @@ class QuizApp {
         } else if (provider === 'gemini') {
             this.openaiSettings.style.display = 'none';
             this.geminiSettings.style.display = 'block';
+        }
+    }
+
+    async loadGeminiModels() {
+        const apiKey = this.geminiApiKeyInput.value.trim();
+        
+        if (!apiKey) {
+            alert(i18n.t('noApiKey'));
+            return;
+        }
+        
+        const originalText = this.loadModelsBtn.textContent;
+        this.loadModelsBtn.disabled = true;
+        this.loadModelsBtn.textContent = i18n.t('loadingModels');
+        
+        try {
+            const models = await GeminiService.listAvailableModels(apiKey);
+            
+            // Clear current options
+            this.geminiModelSelect.innerHTML = '';
+            
+            // Add models to dropdown
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.textContent = model.displayName;
+                this.geminiModelSelect.appendChild(option);
+            });
+            
+            // Restore saved selection or select first
+            const savedModel = localStorage.getItem('gemini_model');
+            if (savedModel && models.find(m => m.name === savedModel)) {
+                this.geminiModelSelect.value = savedModel;
+            } else if (models.length > 0) {
+                this.geminiModelSelect.value = models[0].name;
+                localStorage.setItem('gemini_model', models[0].name);
+            }
+            
+            this.loadModelsBtn.textContent = i18n.t('modelsLoaded');
+            setTimeout(() => {
+                this.loadModelsBtn.textContent = originalText;
+            }, 2000);
+            
+        } catch (error) {
+            alert(`${i18n.t('modelLoadError')}: ${error.message}`);
+            this.loadModelsBtn.textContent = originalText;
+        } finally {
+            this.loadModelsBtn.disabled = false;
         }
     }
 
@@ -1363,7 +1444,9 @@ class QuizApp {
             return;
         }
         
-        const aiService = AIServiceFactory.createService(provider, apiKey);
+        // Get selected model for Gemini
+        const model = provider === 'gemini' ? localStorage.getItem('gemini_model') : null;
+        const aiService = AIServiceFactory.createService(provider, apiKey, model);
         let allNewQuestions = [];
         
         this.generateBtn.disabled = true;
