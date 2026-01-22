@@ -1380,3 +1380,46 @@ textarea.input-field {
         font-size: 1.5rem;
     }
 }
+
+/* Skeleton Loading */
+.skeleton-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.skeleton-card {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.skeleton-line {
+    background: linear-gradient(90deg, var(--input-background) 25%, var(--border-color) 50%, var(--input-background) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-line.title {
+    height: 20px;
+    width: 80%;
+    margin-bottom: 15px;
+}
+
+.skeleton-line.option {
+    height: 16px;
+    width: 60%;
+    margin-bottom: 10px;
+}
+
+.skeleton-line.option:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
