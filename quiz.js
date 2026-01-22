@@ -318,20 +318,170 @@ Where "correct" is the index (0-3) of the correct answer.`;
     }
 }
 
+class CopilotService {
+    constructor(apiKey, model) {
+        this.apiKey = apiKey;
+        this.model = model || 'gpt-4o-mini';
+        this.baseUrl = 'https://api.githubcopilot.com/chat/completions';
+    }
+
+    async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
+        const lang = i18n.t('promptLanguage');
+        
+        const difficultyInstructions = {
+            easy: `DIFFICULTY: Easy
+- Focus on basic facts and definitions
+- Questions should be answerable by someone who read the text once
+- Distractors (wrong answers) should be clearly distinguishable from the correct answer
+- Prioritize "What is...?" and "Which...?" style questions`,
+            medium: `DIFFICULTY: Medium
+- Mix of factual recall and understanding questions
+- Include some "Why...?" and "How...?" questions that require connecting concepts
+- Distractors should be plausible but distinguishable with good understanding
+- Balance between terminology and conceptual understanding`,
+            hard: `DIFFICULTY: Hard
+- Focus on deep understanding and application
+- Include "What would happen if...?" and "How does X relate to Y?" questions
+- Require connecting multiple concepts from the text
+- Distractors should be sophisticated and require careful thinking to eliminate
+- Test ability to apply knowledge to new situations`
+        };
+
+        const prompt = `You are an expert at creating educational quiz questions in ${lang}. Based on the following text, generate ${numQuestions} high-quality multiple choice questions.
+
+${difficultyInstructions[difficulty] || difficultyInstructions.medium}
+
+TEXT:
+${text.substring(0, 8000)}
+
+CRITICAL RULES - Questions MUST focus on the SUBJECT MATTER:
+1. ONLY create questions about the actual educational content (concepts, facts, processes, definitions)
+2. NEVER create questions about:
+   - Document structure (figures, tables, chapters, sections, page numbers)
+   - Metadata (copyright, publication dates, authors, publishers, URLs)
+   - UI elements (buttons, links, navigation, "fokustilstand", comments sections)
+   - References to "the text" itself ("What does the text say about...?")
+   - Visual elements that cannot be seen (figures, images, diagrams)
+3. Questions should stand alone - a student should be able to answer without having the PDF
+
+QUESTION FORMAT RULES:
+4. Each question must have exactly 4 answer options
+5. Only one answer may be correct
+6. All distractors (wrong answers) must be plausible within the subject domain
+7. Vary question types: factual ("What is...?"), conceptual ("Why does...?"), and application ("If X happens, what...?")
+8. Answer in ${lang}
+9. For each question, indicate the page number (look for [Side X] or [Page X] markers)
+10. Include a short excerpt (1-2 sentences) from the text that supports the correct answer
+
+Return ONLY a JSON array with this format (no other text):
+[
+  {
+    "question": "The question here?",
+    "options": ["Answer A", "Answer B", "Answer C", "Answer D"],
+    "correct": 0,
+    "sourcePage": 1,
+    "sourceExcerpt": "The relevant excerpt from the text that explains the answer..."
+  }
+]
+
+Where "correct" is the index (0-3) of the correct answer.`;
+
+        this.currentPdfInfo = pdfInfo;
+
+        const response = await fetch(this.baseUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+            },
+            body: JSON.stringify({
+                model: this.model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 4000
+            })
+        });
+
+        if (!response.ok) {
+            let errorMessage = 'Copilot API fejl';
+            try {
+                const error = await response.json();
+                errorMessage = error.error?.message || error.message || errorMessage;
+            } catch (err) {
+                // Ignore JSON parse errors
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+            throw new Error('Kunne ikke parse AI-svar');
+        }
+        
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            throw new Error('Kunne ikke parse AI-svar');
+        }
+        
+        const questions = JSON.parse(jsonMatch[0]);
+        
+        if (pdfInfo) {
+            questions.forEach(q => {
+                q.sourceFile = pdfInfo.fileName;
+            });
+        }
+        
+        return questions;
+    }
+}
+
 class AIServiceFactory {
-    static createService(provider, apiKey) {
+    static createService(provider, apiKey, options = {}) {
         switch (provider) {
             case 'openai':
                 return new OpenAIService(apiKey);
             case 'gemini':
                 return new GeminiService(apiKey);
+            case 'copilot':
+                return new CopilotService(apiKey, options.model);
             default:
                 throw new Error(`Unknown AI provider: ${provider}`);
         }
     }
 
+    static getProviderSettings(provider) {
+        if (provider === 'copilot') {
+            return {
+                apiKeyKey: 'copilot_api_key',
+                modelKey: 'copilot_model'
+            };
+        }
+        return {
+            apiKeyKey: `${provider}_api_key`,
+            modelKey: null
+        };
+    }
+
     static getProviderKey(provider) {
-        return `${provider}_api_key`;
+        return this.getProviderSettings(provider).apiKeyKey;
+    }
+
+    static getProviderModel(provider) {
+        const settings = this.getProviderSettings(provider);
+        if (!settings.modelKey) {
+            return '';
+        }
+        return localStorage.getItem(settings.modelKey) || '';
+    }
+
+    static setProviderModel(provider, model) {
+        const settings = this.getProviderSettings(provider);
+        if (!settings.modelKey) {
+            return;
+        }
+        localStorage.setItem(settings.modelKey, model);
     }
 
     static getCurrentProvider() {
@@ -350,6 +500,16 @@ class AIServiceFactory {
     static setCurrentApiKey(apiKey) {
         const provider = this.getCurrentProvider();
         localStorage.setItem(this.getProviderKey(provider), apiKey);
+    }
+
+    static getCurrentModel() {
+        const provider = this.getCurrentProvider();
+        return this.getProviderModel(provider);
+    }
+
+    static setCurrentModel(model) {
+        const provider = this.getCurrentProvider();
+        this.setProviderModel(provider, model);
     }
 }
 
@@ -1017,8 +1177,11 @@ class QuizApp {
         this.aiProviderSelect = document.getElementById('ai-provider-select');
         this.openaiApiKeyInput = document.getElementById('openai-api-key');
         this.geminiApiKeyInput = document.getElementById('gemini-api-key');
+        this.copilotApiKeyInput = document.getElementById('copilot-api-key');
+        this.copilotModelInput = document.getElementById('copilot-model');
         this.openaiSettings = document.getElementById('openai-settings');
         this.geminiSettings = document.getElementById('gemini-settings');
+        this.copilotSettings = document.getElementById('copilot-settings');
 
         // Load saved values
         const currentProvider = AIServiceFactory.getCurrentProvider();
@@ -1027,8 +1190,12 @@ class QuizApp {
 
         const openaiKey = localStorage.getItem('openai_api_key') || '';
         const geminiKey = localStorage.getItem('gemini_api_key') || '';
+        const copilotKey = localStorage.getItem('copilot_api_key') || '';
+        const copilotModel = localStorage.getItem('copilot_model') || '';
         this.openaiApiKeyInput.value = openaiKey;
         this.geminiApiKeyInput.value = geminiKey;
+        this.copilotApiKeyInput.value = copilotKey;
+        this.copilotModelInput.value = copilotModel;
 
         // Event listeners
         this.aiProviderSelect.addEventListener('change', (e) => {
@@ -1047,16 +1214,21 @@ class QuizApp {
             localStorage.setItem('gemini_api_key', this.geminiApiKeyInput.value.trim());
             this.updateGenerateButton();
         });
+
+        this.copilotApiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('copilot_api_key', this.copilotApiKeyInput.value.trim());
+            this.updateGenerateButton();
+        });
+
+        this.copilotModelInput.addEventListener('change', () => {
+            localStorage.setItem('copilot_model', this.copilotModelInput.value.trim());
+        });
     }
 
     updateProviderSettings(provider) {
-        if (provider === 'openai') {
-            this.openaiSettings.style.display = 'block';
-            this.geminiSettings.style.display = 'none';
-        } else if (provider === 'gemini') {
-            this.openaiSettings.style.display = 'none';
-            this.geminiSettings.style.display = 'block';
-        }
+        this.openaiSettings.style.display = provider === 'openai' ? 'block' : 'none';
+        this.geminiSettings.style.display = provider === 'gemini' ? 'block' : 'none';
+        this.copilotSettings.style.display = provider === 'copilot' ? 'block' : 'none';
     }
 
     openSettings() {
@@ -1339,7 +1511,8 @@ class QuizApp {
             return;
         }
         
-        const aiService = AIServiceFactory.createService(provider, apiKey);
+        const model = AIServiceFactory.getCurrentModel();
+        const aiService = AIServiceFactory.createService(provider, apiKey, { model });
         let allNewQuestions = [];
         
         this.generateBtn.disabled = true;

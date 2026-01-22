@@ -40,6 +40,7 @@
                         <select id="ai-provider-select" class="input-field">
                             <option value="openai" data-i18n="aiProviderOpenAI">OpenAI</option>
                             <option value="gemini" data-i18n="aiProviderGemini">Google Gemini</option>
+                            <option value="copilot" data-i18n="aiProviderCopilot">GitHub Copilot</option>
                         </select>
                     </div>
                     
@@ -53,6 +54,14 @@
                         <label for="gemini-api-key" data-i18n="geminiApiKey">Google Gemini API-nøgle:</label>
                         <input type="password" id="gemini-api-key" placeholder="AIza..." class="input-field">
                         <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
+                    </div>
+
+                    <div class="setting-group" id="copilot-settings" style="display: none;">
+                        <label for="copilot-api-key" data-i18n="copilotApiKey">GitHub Copilot API-nøgle:</label>
+                        <input type="password" id="copilot-api-key" placeholder="ghu_..." class="input-field">
+                        <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
+                        <label for="copilot-model" data-i18n="copilotModel">Copilot model (valgfrit):</label>
+                        <input type="text" id="copilot-model" placeholder="gpt-4o-mini" class="input-field">
                     </div>
                     
                     <div class="setting-group">
