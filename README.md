@@ -15,6 +15,7 @@ En webapplikation til at oprette quizzer fra PDF-dokumenter ved hjælp af OpenAI
 - **Dark mode** - Switch between light and dark theme (auto-detects system preference)
 - **Bilingual UI** - Switch between Danish and English interface
 - **Settings panel** - Centralized settings for API key, language and theme
+- **Multiple AI providers** - OpenAI, Google Gemini, or GitHub Copilot for question generation
 - **Local storage** - All data is stored in the browser's localStorage
 
 ---
@@ -28,12 +29,13 @@ En webapplikation til at oprette quizzer fra PDF-dokumenter ved hjælp af OpenAI
 - **Mørkt tema** - Skift mellem lyst og mørkt tema (registrerer automatisk systemindstilling)
 - **Tosproget brugerflade** - Skift mellem dansk og engelsk grænseflade
 - **Indstillingspanel** - Samlet indstillinger for API-nøgle, sprog og tema
+- **Flere AI-udbydere** - OpenAI, Google Gemini eller GitHub Copilot til spørgsmål
 - **Lokal lagring** - Alle data gemmes i browserens localStorage
 
 ## Getting Started / Kom i gang
 
 1. Open `index.html` in a browser (or start a local server)
-2. Click the settings icon (⚙️) and enter your OpenAI API key
+2. Click the settings icon (⚙️) and enter your API key for OpenAI, Google Gemini, or GitHub Copilot
 3. Create a new quiz
 4. Upload files (PDF, Word, TXT, Markdown) and generate questions
 5. Start the quiz
@@ -41,7 +43,7 @@ En webapplikation til at oprette quizzer fra PDF-dokumenter ved hjælp af OpenAI
 ---
 
 1. Åbn `index.html` i en browser (eller start en lokal server)
-2. Klik på indstillinger (⚙️) og indtast din OpenAI API-nøgle
+2. Klik på indstillinger (⚙️) og indtast din API-nøgle til OpenAI, Google Gemini eller GitHub Copilot
 3. Opret en ny quiz
 4. Upload filer (PDF, Word, TXT, Markdown) og generer spørgsmål
 5. Start quizzen
@@ -83,7 +85,7 @@ En webapplikation til at oprette quizzer fra PDF-dokumenter ved hjælp af OpenAI
 - Vanilla JavaScript (no frameworks / ingen frameworks)
 - [PDF.js](https://mozilla.github.io/pdf.js/) for PDF text extraction / til PDF-tekstudtræk
 - [Mammoth.js](https://github.com/mwilliamson/mammoth.js) for Word document extraction / til Word-dokumentudtræk
-- OpenAI API (gpt-4o-mini) for question generation / til spørgsmålsgenerering
+- OpenAI, Google Gemini, or GitHub Copilot APIs for question generation / til spørgsmålsgenerering
 
 ## Local Server / Lokal server
 
