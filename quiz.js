@@ -207,9 +207,38 @@ Where "correct" is the index (0-3) of the correct answer.`;
 }
 
 class GeminiService {
-    constructor(apiKey) {
+    constructor(apiKey, model = null) {
         this.apiKey = apiKey;
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        // Use provided model or get from localStorage, default to models/gemini-2.5-flash
+        let selectedModel = model || localStorage.getItem('gemini_model') || 'models/gemini-2.5-flash';
+        
+        // Ensure model has "models/" prefix
+        if (selectedModel && !selectedModel.startsWith('models/')) {
+            selectedModel = 'models/' + selectedModel;
+        }
+        
+        this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent`;
+    }
+
+    static async listAvailableModels(apiKey) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Could not fetch models');
+        }
+        
+        const data = await response.json();
+        
+        // Filter models that support generateContent
+        const generateModels = data.models.filter(m => 
+            m.supportedGenerationMethods?.includes('generateContent')
+        ).map(m => ({
+            name: m.name,
+            displayName: m.displayName || m.name.replace('models/', '')
+        }));
+        
+        return generateModels;
     }
 
     async generateQuestions(text, numQuestions = 10, pdfInfo = null, difficulty = 'medium') {
@@ -275,38 +304,86 @@ Where "correct" is the index (0-3) of the correct answer.`;
 
         this.currentPdfInfo = pdfInfo;
 
-        const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 4000,
-                }
-            })
-        });
+        const requestUrl = `${this.baseUrl}?key=${this.apiKey}`;
+        const requestBody = {
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 4000,
+            }
+        };
+
+        console.log('Gemini API Request URL:', requestUrl.replace(this.apiKey, 'API_KEY_HIDDEN'));
+        console.log('Gemini API Request Body:', JSON.stringify(requestBody).substring(0, 500) + '...');
+
+        let response;
+        try {
+            response = await fetch(requestUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+        } catch (fetchError) {
+            console.error('Fetch error details:', fetchError);
+            throw new Error(`Network error: ${fetchError.message}`);
+        }
+
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Gemini API fejl');
+            let errorMessage = 'Gemini API fejl';
+            try {
+                const error = await response.json();
+                console.error('API error response:', error);
+                errorMessage = error.error?.message || JSON.stringify(error);
+            } catch (e) {
+                const text = await response.text();
+                console.error('Error response text:', text);
+                errorMessage = text || `HTTP ${response.status}`;
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
         const content = data.candidates[0].content.parts[0].text;
         
+        // Extract JSON array from the response
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
             throw new Error('Kunne ikke parse AI-svar');
         }
         
-        const questions = JSON.parse(jsonMatch[0]);
+        let questions;
+        try {
+            // Try to parse the JSON
+            questions = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+            // If parsing fails, try to clean up common issues
+            let cleanedJson = jsonMatch[0]
+                // Remove trailing commas before ] or }
+                .replace(/,(\s*[}\]])/g, '$1')
+                // Fix single quotes to double quotes (if any)
+                .replace(/'/g, '"')
+                // Remove any markdown code block markers
+                .replace(/```json\n?/g, '')
+                .replace(/```\n?/g, '');
+            
+            try {
+                questions = JSON.parse(cleanedJson);
+            } catch (secondError) {
+                console.error('Original content:', content);
+                console.error('Extracted JSON:', jsonMatch[0]);
+                console.error('Parse error:', secondError.message);
+                throw new Error(`Kunne ikke parse AI-svar: ${secondError.message}`);
+            }
+        }
         
         if (pdfInfo) {
             questions.forEach(q => {
@@ -438,12 +515,12 @@ Where "correct" is the index (0-3) of the correct answer.`;
 }
 
 class AIServiceFactory {
-    static createService(provider, apiKey, options = {}) {
+    static createService(provider, apiKey, model = null) {
         switch (provider) {
             case 'openai':
                 return new OpenAIService(apiKey);
             case 'gemini':
-                return new GeminiService(apiKey);
+                return new GeminiService(apiKey, model);
             case 'copilot':
                 return new CopilotService(apiKey, options.model);
             default:
@@ -1177,6 +1254,8 @@ class QuizApp {
         this.aiProviderSelect = document.getElementById('ai-provider-select');
         this.openaiApiKeyInput = document.getElementById('openai-api-key');
         this.geminiApiKeyInput = document.getElementById('gemini-api-key');
+        this.geminiModelSelect = document.getElementById('gemini-model-select');
+        this.loadModelsBtn = document.getElementById('load-models-btn');
         this.copilotApiKeyInput = document.getElementById('copilot-api-key');
         this.copilotModelInput = document.getElementById('copilot-model');
         this.openaiSettings = document.getElementById('openai-settings');
@@ -1190,6 +1269,10 @@ class QuizApp {
 
         const openaiKey = localStorage.getItem('openai_api_key') || '';
         const geminiKey = localStorage.getItem('gemini_api_key') || '';
+        const geminiModel = localStorage.getItem('gemini_model') || 'models/gemini-2.5-flash';
+        this.openaiApiKeyInput.value = openaiKey;
+        this.geminiApiKeyInput.value = geminiModel;
+        this.geminiModelSelect.value = geminiModel;
         const copilotKey = localStorage.getItem('copilot_api_key') || '';
         const copilotModel = localStorage.getItem('copilot_model') || '';
         this.openaiApiKeyInput.value = openaiKey;
@@ -1215,6 +1298,11 @@ class QuizApp {
             this.updateGenerateButton();
         });
 
+        this.geminiModelSelect.addEventListener('change', () => {
+            localStorage.setItem('gemini_model', this.geminiModelSelect.value);
+        });
+
+        this.loadModelsBtn.addEventListener('click', () => this.loadGeminiModels());
         this.copilotApiKeyInput.addEventListener('change', () => {
             localStorage.setItem('copilot_api_key', this.copilotApiKeyInput.value.trim());
             this.updateGenerateButton();
@@ -1229,6 +1317,54 @@ class QuizApp {
         this.openaiSettings.style.display = provider === 'openai' ? 'block' : 'none';
         this.geminiSettings.style.display = provider === 'gemini' ? 'block' : 'none';
         this.copilotSettings.style.display = provider === 'copilot' ? 'block' : 'none';
+    }
+
+    async loadGeminiModels() {
+        const apiKey = this.geminiApiKeyInput.value.trim();
+        
+        if (!apiKey) {
+            alert(i18n.t('noApiKey'));
+            return;
+        }
+        
+        const originalText = this.loadModelsBtn.textContent;
+        this.loadModelsBtn.disabled = true;
+        this.loadModelsBtn.textContent = i18n.t('loadingModels');
+        
+        try {
+            const models = await GeminiService.listAvailableModels(apiKey);
+            
+            // Clear current options
+            this.geminiModelSelect.innerHTML = '';
+            
+            // Add models to dropdown
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.textContent = model.displayName;
+                this.geminiModelSelect.appendChild(option);
+            });
+            
+            // Restore saved selection or select first
+            const savedModel = localStorage.getItem('gemini_model');
+            if (savedModel && models.find(m => m.name === savedModel)) {
+                this.geminiModelSelect.value = savedModel;
+            } else if (models.length > 0) {
+                this.geminiModelSelect.value = models[0].name;
+                localStorage.setItem('gemini_model', models[0].name);
+            }
+            
+            this.loadModelsBtn.textContent = i18n.t('modelsLoaded');
+            setTimeout(() => {
+                this.loadModelsBtn.textContent = originalText;
+            }, 2000);
+            
+        } catch (error) {
+            alert(`${i18n.t('modelLoadError')}: ${error.message}`);
+            this.loadModelsBtn.textContent = originalText;
+        } finally {
+            this.loadModelsBtn.disabled = false;
+        }
     }
 
     openSettings() {
@@ -1512,7 +1648,7 @@ class QuizApp {
         }
         
         const model = AIServiceFactory.getCurrentModel();
-        const aiService = AIServiceFactory.createService(provider, apiKey, { model });
+        const aiService = AIServiceFactory.createService(provider, apiKey, model);
         let allNewQuestions = [];
         
         this.generateBtn.disabled = true;

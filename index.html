@@ -54,6 +54,14 @@
                         <label for="gemini-api-key" data-i18n="geminiApiKey">Google Gemini API-nøgle:</label>
                         <input type="password" id="gemini-api-key" placeholder="AIza..." class="input-field">
                         <p class="hint" data-i18n="apiKeyHint">Nøglen gemmes lokalt i din browser</p>
+                        
+                        <label for="gemini-model-select" data-i18n="geminiModel">Gemini Model:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="gemini-model-select" class="input-field" style="flex: 1;">
+                                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                            </select>
+                            <button id="load-models-btn" class="btn btn-secondary btn-small" data-i18n="loadModels" style="white-space: nowrap;">Hent modeller</button>
+                        </div>
                     </div>
 
                     <div class="setting-group" id="copilot-settings" style="display: none;">
